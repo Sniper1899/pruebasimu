@@ -182,7 +182,10 @@
             { id: 'chandelure', name: 'Chandelure', role: 'Attacker' }, { id: 'inteleon', name: 'Inteleon', role: 'Attacker' }, { id: 'leafeon', name: 'Leafeon', role: 'Speedster' },
             { id: 'umbreon', name: 'Umbreon', role: 'Defender' }, { id: 'mewtwo-x', name: 'Mewtwo X', role: 'All-Rounder' }, { id: 'mewtwo-y', name: 'Mewtwo Y', role: 'Attacker' },
             { id: 'blaziken', name: 'Blaziken', role: 'All-Rounder' }, { id: 'mimikyu', name: 'Mimikyu', role: 'All-Rounder' }, { id: 'metagross', name: 'Metagross', role: 'All-Rounder' },
-            { id: 'meowscarada', name: 'Meowscarada', role: 'Speedster' }, { id: 'gyarados', name: 'Gyarados', role: 'All-Rounder' }, { id: 'falinks', name: 'Falinks', role: 'All-Rounder' }
+            { id: 'meowscarada', name: 'Meowscarada', role: 'Speedster' }, { id: 'gyarados', name: 'Gyarados', role: 'All-Rounder' }, { id: 'falinks', name: 'Falinks', role: 'All-Rounder' },
+            { id: "azumarill", name: "Azumarill", role: "All-Rounder" }, { id: "glaceon", name: "Glaceon", role: "Attacker" }, { id: "greedent", name: "Greedent", role: "Defender" },
+            { id: "dragapult", name: "Dragapult", role: "Attacker" }, { id: "miraidon", name: "Miraidon", role: "Attacker" }, { id: "ceruledge", name: "Ceruledge", role: "All-Rounder"},
+            { id: 'psyduck', name: 'Psyduck', role: 'Supporter', imageUrl: 'https://static.wikidex.net/media/images/c/c2/latest/20240330174004/Psyduck_Pok%C3%A9mon_UNITE.png' }
         ].sort((a, b) => a.name.localeCompare(b.name));
 
         // --- ESTADO GLOBAL DE LA APLICACIÓN ---
@@ -559,8 +562,8 @@
             card.dataset.pokemonId = pokemon.id;
             
             const img = document.createElement('img');
-            // URL corregida usando la fuente del simulador antiguo
-            img.src = `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat/stat-${pokemon.id}.png`;
+            // URL corregida y con manejo especial para Psyduck
+            img.src = pokemon.imageUrl || `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat/stat-${pokemon.id}.png`;
             img.alt = pokemon.name;
             img.className = 'w-16 h-16 object-contain';
             img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=?`; };
@@ -581,8 +584,8 @@
             if (pokemonId) {
                 const pokemon = pokemonData.find(p => p.id === pokemonId);
                 const img = document.createElement('img');
-                // URL corregida usando la fuente del simulador antiguo
-                img.src = `https://unite.pokemon.com/images/pokemon/${pokemonId}/stat/stat-${pokemonId}.png`;
+                // URL corregida y con manejo especial para Psyduck
+                img.src = pokemon.imageUrl || `https://unite.pokemon.com/images/pokemon/${pokemonId}/stat/stat-${pokemonId}.png`;
                 img.alt = pokemon?.name || pokemonId;
                 img.className = isBan ? 'w-10 h-10' : 'w-16 h-16';
                 img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=?`; };
@@ -617,8 +620,8 @@
                     const pokemon = pokemonData.find(p => p.id === pick);
                     if (pokemon) {
                         const img = document.createElement('img');
-                        // URL corregida usando la fuente del simulador antiguo
-                        img.src = `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat/stat-${pokemon.id}.png`;
+                        // URL corregida y con manejo especial para Psyduck
+                        img.src = pokemon.imageUrl || `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat/stat-${pokemon.id}.png`;
                         img.alt = pokemon.name;
                         img.className = 'w-12 h-12';
                         img.onerror = (e) => { e.target.src = `https://placehold.co/48x48/1f2937/ffffff?text=?`; };
