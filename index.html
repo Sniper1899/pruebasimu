@@ -176,7 +176,7 @@
             { id: 'espeon', name: 'Espeon', role: 'Attacker' }, { id: 'blissey', name: 'Blissey', role: 'Supporter' }, { id: 'mamoswine', name: 'Mamoswine', role: 'Defender' },
             { id: 'sylveon', name: 'Sylveon', role: 'Attacker' }, { id: 'decidueye', name: 'Decidueye', role: 'Attacker' }, { id: 'goodra', name: 'Goodra', role: 'Defender' },
             { id: 'buzzwole', name: 'Buzzwole', role: 'All-Rounder' }, { id: 'tyranitar', name: 'Tyranitar', role: 'All-Rounder' }, { id: 'mew', name: 'Mew', role: 'Attacker' },
-            { id: 'dodrio', name: 'Dodrio', role: 'Speedster' }, { id: 'scizor', name: 'Scizor', role: 'All-Rounder' }, { id: 'clefairy', name: 'Clefairy', role: 'Supporter' },
+            { id: 'dodrio', name: 'Dodrio', role: 'Speedster' }, { id: 'scizor', name: 'Scizor', role: 'All-Rounder' },
             { id: 'zoroark', name: 'Zoroark', role: 'Speedster' }, { id: 'sableye', name: 'Sableye', role: 'Supporter' }, { id: 'urshifu', name: 'Urshifu', role: 'All-Rounder' },
             { id: 'comfey', name: 'Comfey', role: 'Supporter' }, { id: 'zacian', name: 'Zacian', role: 'All-Rounder' }, { id: 'lapras', name: 'Lapras', role: 'Defender' },
             { id: 'chandelure', name: 'Chandelure', role: 'Attacker' }, { id: 'inteleon', name: 'Inteleon', role: 'Attacker' }, { id: 'leafeon', name: 'Leafeon', role: 'Speedster' },
@@ -191,6 +191,7 @@
         let unsubscribeGame = null; 
         let selectedPokemonId = null;
         let countdownInterval = null;
+        let currentGameState = null; // Variable global para el estado del juego
 
         // --- ELEMENTOS DEL DOM ---
         const appContainer = document.getElementById('app-container');
@@ -245,7 +246,7 @@
                     document.getElementById('username-input').value = savedUsername;
                 }
             } else if (viewName === 'draft') {
-                populatePokemonGrid(data.gameState);
+                populatePokemonGrid(); // No necesita estado inicial
                 updateDraftUI(data.gameState);
                 document.getElementById('exit-button').addEventListener('click', exitGame);
                 document.getElementById('confirm-button')?.addEventListener('click', confirmSelection);
@@ -315,12 +316,10 @@
             const myCurrentTeam = getMyTeam(gameState);
         
             const updates = {};
-            // Si el jugador ya está en un equipo y quiere cambiar, lo borramos del equipo anterior
             if (myCurrentTeam && myCurrentTeam !== team) {
                 updates[`players.${myCurrentTeam}`] = deleteField();
             }
         
-            // Añadir al jugador al nuevo equipo solo si no está ocupado por OTRO jugador
             if (!gameState.players[team] || gameState.players[team].id === currentUser.uid) {
                 updates[`players.${team}`] = { id: currentUser.uid, name: username };
                 await updateDoc(gameRef, updates);
@@ -338,7 +337,8 @@
             const gameRef = doc(db, 'games', gameId);
             unsubscribeGame = onSnapshot(gameRef, (docSnap) => {
                 if (docSnap.exists()) {
-                    handleGameStateChange(docSnap.data());
+                    currentGameState = docSnap.data(); // Actualiza el estado global
+                    handleGameStateChange(currentGameState);
                 } else {
                     alert("La partida ha terminado o fue eliminada.");
                     exitGame();
@@ -423,14 +423,14 @@
             });
         }
 
-        function populatePokemonGrid(gameState) {
+        function populatePokemonGrid() {
             const grid = document.getElementById('pokemon-grid');
             grid.innerHTML = '';
             pokemonData.forEach(p => {
                 const card = createPokemonCard(p);
                 grid.appendChild(card);
             });
-            attachPokemonCardListeners(gameState);
+            attachPokemonCardListeners();
         }
 
         function updatePokemonGrid(gameState) {
@@ -445,16 +445,18 @@
              });
         }
 
-        function attachPokemonCardListeners(gameState) {
-            document.querySelectorAll('.pokemon-card:not(.disabled)').forEach(card => {
+        function attachPokemonCardListeners() {
+            document.querySelectorAll('.pokemon-card').forEach(card => {
                 card.addEventListener('click', () => {
-                     const myTeam = getMyTeam(gameState);
-                     if (gameState.turn !== myTeam) return; 
+                     if (!currentGameState) return; // Chequeo de seguridad
+                     const myTeam = getMyTeam(currentGameState);
+                     // Usa el estado global y actualizado para la validación del turno
+                     if (currentGameState.turn !== myTeam) return; 
                      
                      const pokemonId = card.dataset.pokemonId;
                      selectedPokemonId = (selectedPokemonId === pokemonId) ? null : pokemonId;
                      
-                     updatePokemonGrid(gameState);
+                     updatePokemonGrid(currentGameState);
                      document.getElementById('confirm-button').disabled = !selectedPokemonId;
                 });
             });
@@ -557,8 +559,8 @@
             card.dataset.pokemonId = pokemon.id;
             
             const img = document.createElement('img');
-            // La URL oficial usa guiones y nombres específicos
-            img.src = `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat.png`;
+            // URL corregida para mayor estabilidad
+            img.src = `https://unite.pokemon.com/es-es/images/pokemon/${pokemon.id}/stat.png`;
             img.alt = pokemon.name;
             img.className = 'w-16 h-16 object-contain';
             img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=${pokemon.name.substring(0,2)}`; };
@@ -579,10 +581,11 @@
             if (pokemonId) {
                 const pokemon = pokemonData.find(p => p.id === pokemonId);
                 const img = document.createElement('img');
-                img.src = `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat.png`;
-                img.alt = pokemon.name;
+                // URL corregida para mayor estabilidad
+                img.src = `https://unite.pokemon.com/es-es/images/pokemon/${pokemon.id}/stat.png`;
+                img.alt = pokemon?.name || pokemonId;
                 img.className = isBan ? 'w-10 h-10' : 'w-16 h-16';
-                img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=${pokemon.name.substring(0,2)}`; };
+                img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=${pokemonId.substring(0,2)}`; };
                 slot.appendChild(img);
                 if (!isBan && pokemon) {
                     const name = document.createElement('span');
@@ -614,7 +617,7 @@
                     const pokemon = pokemonData.find(p => p.id === pick);
                     if (pokemon) {
                         const img = document.createElement('img');
-                        img.src = `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat.png`;
+                        img.src = `https://unite.pokemon.com/es-es/images/pokemon/${pokemon.id}/stat.png`;
                         img.alt = pokemon.name;
                         img.className = 'w-12 h-12';
                         mobileSlot.appendChild(img);
@@ -628,7 +631,7 @@
             const banContainer = document.getElementById(`${team}-bans`);
             if (!banContainer) return;
             banContainer.innerHTML = '';
-            for(let i = 0; i < 2; i++) { // Cambiado a 2 baneos
+            for(let i = 0; i < 2; i++) { // 2 baneos por equipo
                  const ban = bans[i] || null;
                  banContainer.appendChild(createTeamSlot(ban, true));
             }
