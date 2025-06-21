@@ -164,9 +164,9 @@
         // --- DATOS DE POKÉMON (IDs Y URLS CORREGIDOS) ---
         const pokemonData = [
             { id: 'venusaur', name: 'Venusaur', role: 'Attacker' }, { id: 'charizard', name: 'Charizard', role: 'All-Rounder' }, { id: 'blastoise', name: 'Blastoise', role: 'Defender' },
-            { id: 'pikachu', name: 'Pikachu', role: 'Attacker' }, { id: 'clefable', name: 'Clefable', role: 'Supporter' }, { id: 'ninetales-alolan', name: 'A. Ninetales', role: 'Attacker' },
+            { id: 'pikachu', name: 'Pikachu', role: 'Attacker' }, { id: 'clefable', name: 'Clefable', role: 'Supporter' }, { id: 'alolan-ninetales', name: 'A. Ninetales', role: 'Attacker' },
             { id: 'wigglytuff', name: 'Wigglytuff', role: 'Supporter' }, { id: 'machamp', name: 'Machamp', role: 'All-Rounder' }, { id: 'slowbro', name: 'Slowbro', role: 'Defender' },
-            { id: 'gengar', name: 'Gengar', role: 'Speedster' }, { id: 'mr.mime', name: 'Mr. Mime', role: 'Supporter' }, { id: 'snorlax', name: 'Snorlax', role: 'Defender' },
+            { id: 'gengar', name: 'Gengar', role: 'Speedster' }, { id: 'mr-mime', name: 'Mr. Mime', role: 'Supporter' }, { id: 'snorlax', name: 'Snorlax', role: 'Defender' },
             { id: 'gardevoir', name: 'Gardevoir', role: 'Attacker' }, { id: 'absol', name: 'Absol', role: 'Speedster' }, { id: 'garchomp', name: 'Garchomp', role: 'All-Rounder' },
             { id: 'lucario', name: 'Lucario', role: 'All-Rounder' }, { id: 'crustle', name: 'Crustle', role: 'Defender' }, { id: 'greninja', name: 'Greninja', role: 'Attacker' },
             { id: 'talonflame', name: 'Talonflame', role: 'Speedster' }, { id: 'zeraora', name: 'Zeraora', role: 'Speedster' }, { id: 'cinderace', name: 'Cinderace', role: 'Attacker' },
@@ -559,11 +559,11 @@
             card.dataset.pokemonId = pokemon.id;
             
             const img = document.createElement('img');
-            // URL cambiada a una API para mayor estabilidad
-            img.src = `https://unite-api.dev/images/pokemon/${pokemon.id}.png`;
+            // URL corregida usando la fuente del simulador antiguo
+            img.src = `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat/stat-${pokemon.id}.png`;
             img.alt = pokemon.name;
             img.className = 'w-16 h-16 object-contain';
-            img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=${pokemon.name.substring(0,2)}`; };
+            img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=?`; };
             
             const name = document.createElement('span');
             name.className = 'text-xs font-semibold mt-1 truncate w-full';
@@ -581,11 +581,11 @@
             if (pokemonId) {
                 const pokemon = pokemonData.find(p => p.id === pokemonId);
                 const img = document.createElement('img');
-                // URL cambiada a una API para mayor estabilidad
-                img.src = `https://unite-api.dev/images/pokemon/${pokemonId}.png`;
+                // URL corregida usando la fuente del simulador antiguo
+                img.src = `https://unite.pokemon.com/images/pokemon/${pokemonId}/stat/stat-${pokemonId}.png`;
                 img.alt = pokemon?.name || pokemonId;
                 img.className = isBan ? 'w-10 h-10' : 'w-16 h-16';
-                img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=${pokemonId.substring(0,2)}`; };
+                img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=?`; };
                 slot.appendChild(img);
                 if (!isBan && pokemon) {
                     const name = document.createElement('span');
@@ -617,9 +617,11 @@
                     const pokemon = pokemonData.find(p => p.id === pick);
                     if (pokemon) {
                         const img = document.createElement('img');
-                        img.src = `https://unite-api.dev/images/pokemon/${pokemon.id}.png`;
+                        // URL corregida usando la fuente del simulador antiguo
+                        img.src = `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat/stat-${pokemon.id}.png`;
                         img.alt = pokemon.name;
                         img.className = 'w-12 h-12';
+                        img.onerror = (e) => { e.target.src = `https://placehold.co/48x48/1f2937/ffffff?text=?`; };
                         mobileSlot.appendChild(img);
                     }
                 }
