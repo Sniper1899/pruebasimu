@@ -32,27 +32,32 @@
         .styled-button:disabled { background-image: none; background-color: #374151; cursor: not-allowed; }
         .secondary-button { background-color: rgba(30, 41, 59, 0.5); border: 1px solid #334155; transition: all 0.2s; }
         .secondary-button:hover { background-color: rgba(51, 65, 85, 0.7); border-color: #475569; }
-        .team-slot.picking { transform: scale(1.03); box-shadow: 0 0 20px, 0 0 10px inset; border-color: #facc15; }
+        .team-slot.picking { transform: scale(1.03); box-shadow: 0 0 20px #facc15, 0 0 10px #facc15 inset; border-color: #facc15; }
         #pokemon-grid::-webkit-scrollbar, body::-webkit-scrollbar { width: 8px; }
         #pokemon-grid::-webkit-scrollbar-track, body::-webkit-scrollbar-track { background: transparent; }
         #pokemon-grid::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb { background-color: #38bdf8; border-radius: 20px; border: 2px solid transparent; background-clip: content-box;}
         @keyframes phase-anim { 0%, 100% { opacity: 0; transform: scale(0.8) translateY(20px); } 10%, 90% { opacity: 1; transform: scale(1) translateY(0); } }
-        .phase-overlay { animation: phase-anim 3s ease-in-out forwards; text-shadow: 0 0 15px rgba(255,255,255,0.8); }
+        .phase-overlay-active { display: flex; animation: phase-anim 3s ease-in-out forwards; text-shadow: 0 0 15px rgba(255,255,255,0.8); }
     </style>
 </head>
 <body class="p-2 sm:p-4">
 
-    <div id="app-container" class="w-full max-w-screen-xl mx-auto flex flex-col relative z-10" style="min-height: 95vh;">
+    <div id="app-container" class="w-full max-w-screen-xl mx-auto flex flex-col min-h-screen relative z-10">
         <!-- El contenido se renderizará aquí -->
     </div>
     
+    <div id="phase-overlay-container" class="fixed inset-0 bg-black/80 flex-col items-center justify-center p-4 z-50 hidden">
+        <h2 id="phase-text" class="text-6xl font-extrabold text-white text-center"></h2>
+    </div>
+
+    <!-- Plantilla para el Lobby -->
     <template id="lobby-template">
-       <div class="flex flex-col h-full justify-center items-center gap-6">
+       <div class="flex flex-col h-full items-center justify-center gap-6 pt-10">
             <header class="text-center shrink-0">
                 <h1 class="text-4xl sm:text-5xl font-extrabold main-title">SIMULADOR DE DRAFTEO ONLINE</h1>
                 <p class="text-slate-300 font-semibold">Creado por: <span class="font-bold text-cyan-400">antuan</span></p>
             </header>
-            <div class="modern-panel p-8 rounded-2xl text-center w-full max-w-md">
+            <div class="modern-panel p-8 rounded-2xl text-center w-full max-w-md mt-8">
                 <h2 class="text-2xl font-bold mb-4">Ingresa tu nombre de usuario</h2>
                 <input type="text" id="username-input" class="w-full bg-slate-800 text-white p-3 rounded-lg text-center" placeholder="Tu nombre...">
             </div>
@@ -67,15 +72,16 @@
                     <button id="choose-orange" class="secondary-button text-orange-400 font-bold py-3 px-6 rounded-xl">Equipo Naranja</button>
                 </div>
             </div>
-             <div id="waiting-room" class="hidden text-center modern-panel p-6">
+             <div id="waiting-room" class="hidden text-center modern-panel p-6 mt-4">
                 <p>Esperando oponente... Comparte este código:</p>
                 <p id="game-code-display" class="text-2xl font-bold text-yellow-300 mt-2 cursor-pointer" title="Copiar código"></p>
             </div>
-        </div>
+       </div>
     </template>
 
+    <!-- Plantilla para el Drafteo -->
     <template id="draft-template">
-        <div class="flex flex-col flex-grow min-h-0">
+        <div class="flex flex-col flex-grow min-h-0 h-full">
              <div id="top-bar" class="flex flex-col md:flex-row justify-between items-center mb-4 px-4 shrink-0">
                 <div class="w-full md:w-1/3 flex justify-center md:justify-start items-center gap-2 order-2 md:order-1 my-2 md:my-0">
                     <div id="purple-bans" class="flex justify-center gap-2"></div>
@@ -88,16 +94,24 @@
                 </div>
             </div>
             <div class="flex-grow flex flex-col lg:flex-row gap-4 min-h-0">
-                <aside class="w-full lg:w-1/4 p-4 modern-panel flex flex-col">
+                <aside id="purple-aside" class="w-full lg:w-1/4 p-4 modern-panel flex-col hidden lg:flex">
                     <h2 id="purple-player-name" class="text-2xl font-bold text-center mb-4 text-purple-400"></h2>
                     <div id="purple-team" class="space-y-3 flex-grow"></div>
                 </aside>
-                <section class="flex-grow flex flex-col min-h-0">
+                <section id="main-section" class="flex-grow flex flex-col min-h-0">
                     <div id="draft-status" class="w-full text-center p-3 mb-4 rounded-lg font-extrabold text-xl sm:text-2xl modern-panel shrink-0"></div>
+                    <div class="lg:hidden modern-panel p-2 mb-4">
+                        <h2 id="purple-player-name-mobile" class="text-xl text-center font-bold text-purple-400"></h2>
+                        <div id="purple-team-mobile" class="flex justify-around mt-2"></div>
+                    </div>
                     <div id="pokemon-grid" class="flex-grow p-3 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 modern-panel overflow-y-auto" style="height: 50vh;"></div>
                     <button id="confirm-button" class="w-full max-w-xs mx-auto styled-button font-bold py-3 px-4 text-lg rounded-xl mt-4 hidden">CONFIRMAR</button>
+                    <div class="lg:hidden modern-panel p-2 mt-4">
+                        <h2 id="orange-player-name-mobile" class="text-xl text-center font-bold text-orange-400"></h2>
+                        <div id="orange-team-mobile" class="flex justify-around mt-2"></div>
+                    </div>
                 </section>
-                <aside class="w-full lg:w-1/4 p-4 modern-panel flex flex-col">
+                <aside id="orange-aside" class="w-full lg:w-1/4 p-4 modern-panel hidden lg:flex flex-col">
                     <h2 id="orange-player-name" class="text-2xl font-bold text-center mb-4 text-orange-400"></h2>
                     <div id="orange-team" class="space-y-3 flex-grow"></div>
                 </aside>
@@ -108,206 +122,607 @@
         </div>
     </template>
     
-    <div id="phase-overlay-container" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
-        <h2 id="phase-text" class="text-6xl font-extrabold text-white text-center"></h2>
-    </div>
-    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, setDoc, getDoc, updateDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURACIÓN DE FIREBASE (INTEGRADA) ---
+        // --- CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = {
-          apiKey: "AIzaSyBVBM0lEVF7oJwaIUYoEY2vc5eLXMPkw3I",
-          authDomain: "simulador-unite.firebaseapp.com",
-          projectId: "simulador-unite",
-          storageBucket: "simulador-unite.firebasestorage.app",
-          messagingSenderId: "562805600014",
-          appId: "1:562805600014:web:ae9ad79882a5afb477b15f",
-          measurementId: "G-YMCV11HQH0"
+            // TU CONFIGURACIÓN DE FIREBASE. Asegúrate de que es correcta.
+            // Es recomendable usar variables de entorno para esto en un proyecto real.
+            apiKey: "AIzaSyBVBM0lEVF7oJwaIUYoEY2vc5eLXMPkw3I",
+            authDomain: "simulador-unite.firebaseapp.com",
+            projectId: "simulador-unite",
+            storageBucket: "simulador-unite.appspot.com",
+            messagingSenderId: "562805600014",
+            appId: "1:562805600014:web:ae9ad79882a5afb477b15f"
         };
         
+        // --- INICIALIZACIÓN DE FIREBASE ---
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        
-        let localPlayer = {};
-        let currentUnsubscribe;
-        let timerInterval;
-        let gameState = {};
-        const appContainer = document.getElementById('app-container');
 
+        // --- DATOS DE POKÉMON ---
         const pokemonData = [
-            { id: "venusaur", name: "Venusaur", role: "Attacker"}, { id: "charizard", name: "Charizard", role: "All-Rounder"}, { id: "blastoise", name: "Blastoise", role: "Defender"}, { id: "pikachu", name: "Pikachu", role: "Attacker"}, { id: "clefable", name: "Clefable", role: "Supporter"}, { id: "alolan-ninetales", name: "A. Ninetales", role: "Attacker"}, { id: "wigglytuff", name: "Wigglytuff", role: "Supporter"}, { id: "machamp", name: "Machamp", role: "All-Rounder"}, { id: "slowbro", name: "Slowbro", role: "Defender"}, { id: "gengar", name: "Gengar", role: "Speedster"}, { id: "mr-mime", name: "Mr. Mime", role: "Supporter"}, { id: "gyarados", name: "Gyarados", role: "All-Rounder"}, { id: "snorlax", name: "Snorlax", role: "Defender"}, { id: "dragonite", name: "Dragonite", role: "All-Rounder"}, { id: "mewtwo-x", name: "Mewtwo X", role: "All-Rounder"}, { id: "mewtwo-y", name: "Mewtwo Y", role: "Attacker"}, { id: "mew", name: "Mew", role: "Attacker"}, { id: "azumarill", name: "Azumarill", role: "All-Rounder"}, { id: "espeon", name: "Espeon", role: "Attacker"}, { id: "umbreon", name: "Umbreon", role: "Defender"}, { id: "scizor", name: "Scizor", role: "All-Rounder"}, { id: "blissey", name: "Blissey", role: "Supporter"}, { id: "tyranitar", name: "Tyranitar", role: "All-Rounder"}, { id: "gardevoir", name: "Gardevoir", role: "Attacker"}, { id: "sableye", name: "Sableye", role: "Supporter"}, { id: "absol", name: "Absol", role: "Speedster"}, { id: "metagross", name: "Metagross", role: "All-Rounder"}, { id: "garchomp", name: "Garchomp", role: "All-Rounder"}, { id: "lucario", name: "Lucario", role: "All-Rounder"}, { id: "leafeon", name: "Leafeon", role: "Speedster"}, { id: "glaceon", name: "Glaceon", role: "Attacker"}, { id: "crustle", name: "Crustle", role: "Defender"}, { id: "greninja", name: "Greninja", role: "Attacker"}, { id: "talonflame", name: "Talonflame", role: "Speedster"}, { id: "aegislash", name: "Aegislash", role: "All-Rounder"}, { id: "sylveon", name: "Sylveon", role: "Attacker"}, { id: "goodra", name: "Goodra", role: "Defender"}, { id: "trevenant", name: "Trevenant", role: "Defender"}, { id: "hoopa", name: "Hoopa", role: "Supporter"}, { id: "decidueye", name: "Decidueye", role: "Attacker"}, { id: "tsareena", name: "Tsareena", role: "All-Rounder"}, { id: "comfey", name: "Comfey", role: "Supporter"}, { id: "cinderace", name: "Cinderace", role: "Attacker"}, { id: "inteleon", name: "Inteleon", role: "Attacker"}, { id: "eldegoss", name: "Eldegoss", role: "Supporter"}, { id: "cramorant", name: "Cramorant", role: "Attacker"}, { id: "duraludon", name: "Duraludon", role: "Attacker"}, { id: "zeraora", name: "Zeraora", role: "Speedster"}, { id: "lapras", name: "Lapras", role: "Defender"}, { id: "chandelure", name: "Chandelure", role: "Attacker"}, { id: "dodrio", name: "Dodrio", role: "Speedster"}, { id: "buzzwole", name: "Buzzwole", role: "All-Rounder"}, { id: "zacian", name: "Zacian", role: "All-Rounder"}, { id: "urshifu", name: "Urshifu", role: "All-Rounder"}, { id: "dragapult", name: "Dragapult", role: "Attacker"}, { id: "mamoswine", name: "Mamoswine", role: "Defender"}, { id: "delphox", name: "Delphox", role: "Attacker"}, { id: "zoroark", name: "Zoroark", role: "Speedster"}, { id: "mimikyu", name: "Mimikyu", role: "All-Rounder"}, { id: "falinks", name: "Falinks", role: "All-Rounder"}, { id: "blaziken", name: "Blaziken", role: "All-Rounder"}, { id: "meowscarada", name: "Meowscarada", role: "Speedster"}, { id: "miraidon", name: "Miraidon", role: "Attacker"}, { id: "ceruledge", name: "Ceruledge", role: "All-Rounder"}, { id: "armarouge", name: "Armarouge", role: "Attacker"}, { id: "alcremie", name: "Alcremie", role: "Supporter"}, { id: "ho-oh", name: "Ho-Oh", role: "Defender"}, { id: "alolan-raichu", name: "A. Raichu", role: "Attacker"}, { id: "darkrai", name: "Darkrai", role: "Speedster"}, { id: "greedent", name: "Greedent", role: "Defender"}, { id: "suicune", name: "Suicune", role: "All-Rounder"}, { id: "tinkaton", name: "Tinkaton", role: "All-Rounder"}
-            ].sort((a, b) => a.name.localeCompare(b.name));
-            
-        const initialGameState = { phase: 'WAITING', turn: 'PURPLE', purpleBans: [], orangeBans: [], purplePicks: [], orangePicks: [], pickOrderIndex: 0, banOrderIndex: 0, selectedPokemon: {}, players: {} };
-        const pickOrder = [ { team: 'PURPLE', count: 1 }, { team: 'ORANGE', count: 2 }, { team: 'PURPLE', count: 2 }, { team: 'ORANGE', count: 2 }, { team: 'PURPLE', count: 2 }, { team: 'ORANGE', count: 1 } ];
-        const banOrder = [ { team: 'PURPLE', count: 1 }, { team: 'ORANGE', count: 1 }, { team: 'PURPLE', count: 1 }, { team: 'ORANGE', count: 1 } ];
+            { id: 'venusaur', name: 'Venusaur', role: 'Attacker' }, { id: 'charizard', name: 'Charizard', role: 'All-Rounder' }, { id: 'blastoise', name: 'Blastoise', role: 'Defender' },
+            { id: 'pikachu', name: 'Pikachu', role: 'Attacker' }, { id: 'clefable', name: 'Clefable', role: 'Supporter' }, { id: 'ninetales', name: 'A. Ninetales', role: 'Attacker' },
+            { id: 'wigglytuff', name: 'Wigglytuff', role: 'Supporter' }, { id: 'machamp', name: 'Machamp', role: 'All-Rounder' }, { id: 'slowbro', name: 'Slowbro', role: 'Defender' },
+            { id: 'gengar', name: 'Gengar', role: 'Speedster' }, { id: 'mr-mime', name: 'Mr. Mime', role: 'Supporter' }, { id: 'snorlax', name: 'Snorlax', role: 'Defender' },
+            { id: 'gardevoir', name: 'Gardevoir', role: 'Attacker' }, { id: 'absol', name: 'Absol', role: 'Speedster' }, { id: 'garchomp', name: 'Garchomp', role: 'All-Rounder' },
+            { id: 'lucario', name: 'Lucario', role: 'All-Rounder' }, { id: 'crustle', name: 'Crustle', role: 'Defender' }, { id: 'greninja', name: 'Greninja', role: 'Attacker' },
+            { id: 'talonflame', name: 'Talonflame', role: 'Speedster' }, { id: 'zeraora', name: 'Zeraora', role: 'Speedster' }, { id: 'cinderace', name: 'Cinderace', role: 'Attacker' },
+            { id: 'eldegoss', name: 'Eldegoss', role: 'Supporter' }, { id: 'cramorant', name: 'Cramorant', role: 'Attacker' }, { id: 'dragonite', name: 'Dragonite', role: 'All-Rounder' },
+            { id: 'tsareena', name: 'Tsareena', role: 'All-Rounder' }, { id: 'aegislash', name: 'Aegislash', role: 'All-Rounder' }, { id: 'trevenant', name: 'Trevenant', role: 'Defender' },
+            { id: 'hoopa', name: 'Hoopa', role: 'Supporter' }, { id: 'duraludon', name: 'Duraludon', role: 'Attacker' }, { id: 'delphox', name: 'Delphox', role: 'Attacker' },
+            { id: 'espeon', name: 'Espeon', role: 'Attacker' }, { id: 'blissey', name: 'Blissey', role: 'Supporter' }, { id: 'mamoswine', name: 'Mamoswine', role: 'Defender' },
+            { id: 'sylveon', name: 'Sylveon', role: 'Attacker' }, { id: 'decidueye', name: 'Decidueye', role: 'Attacker' }, { id: 'goodra', name: 'Goodra', role: 'Defender' },
+            { id: 'buzzwole', name: 'Buzzwole', role: 'All-Rounder' }, { id: 'tyranitar', name: 'Tyranitar', role: 'All-Rounder' }, { id: 'mew', name: 'Mew', role: 'Attacker' },
+            { id: 'dodrio', name: 'Dodrio', role: 'Speedster' }, { id: 'scizor', name: 'Scizor', role: 'All-Rounder' }, { id: 'clefairy', name: 'Clefairy', role: 'Supporter' },
+            { id: 'zorua', name: 'Zoroark', role: 'Speedster' }, { id: 'sableye', name: 'Sableye', role: 'Supporter' }, { id: 'urshifu', name: 'Urshifu', role: 'All-Rounder' },
+            { id: 'comfey', name: 'Comfey', role: 'Supporter' }, { id: 'zacian', name: 'Zacian', role: 'All-Rounder' }, { id: 'lapras', name: 'Lapras', role: 'Defender' },
+            { id: 'chandelure', name: 'Chandelure', role: 'Attacker' }, { id: 'inteleon', name: 'Inteleon', role: 'Attacker' }, { id: 'leafeon', name: 'Leafeon', role: 'Speedster' },
+            { id: 'umbreon', name: 'Umbreon', role: 'Defender' }, { id: 'mewtwo-x', name: 'Mewtwo X', role: 'All-Rounder' }, { id: 'mewtwo-y', name: 'Mewtwo Y', role: 'Attacker' },
+            { id: 'blaziken', name: 'Blaziken', role: 'All-Rounder' }, { id: 'mimikyu', name: 'Mimikyu', role: 'All-Rounder' }, { id: 'metagross', name: 'Metagross', role: 'All-Rounder' },
+            { id: 'meowscarada', name: 'Meowscarada', role: 'Speedster' }, { id: 'gyarados', name: 'Gyarados', role: 'All-Rounder' }, { id: 'falinks', name: 'Falinks', role: 'All-Rounder' }
+        ].sort((a, b) => a.name.localeCompare(b.name));
 
-        function showLobby() {
-            if (currentUnsubscribe) currentUnsubscribe();
-            appContainer.innerHTML = '';
-            const lobbyTemplate = document.getElementById('lobby-template');
-            appContainer.appendChild(lobbyTemplate.content.cloneNode(true));
-            document.getElementById('create-game-button').addEventListener('click', showTeamSelection);
-            document.getElementById('join-game-button').addEventListener('click', joinGame);
-        }
-        
-        function showTeamSelection() {
-            const usernameInput = document.getElementById('username-input');
-            if (!usernameInput.value.trim()) { alert("Por favor, ingresa un nombre de usuario."); return; }
-            document.getElementById('lobby-buttons').classList.add('hidden');
-            const teamSelection = document.getElementById('team-selection');
-            teamSelection.classList.remove('hidden');
-            teamSelection.classList.add('flex');
-            document.getElementById('choose-purple').onclick = () => createGame('PURPLE');
-            document.getElementById('choose-orange').onclick = () => createGame('ORANGE');
-        }
+        // --- ESTADO GLOBAL DE LA APLICACIÓN ---
+        let currentUser = null;
+        let currentGameId = null;
+        let unsubscribeGame = null; // Función para dejar de escuchar cambios en la partida
+        let selectedPokemonId = null;
+        let countdownInterval = null;
 
-        async function createGame(chosenTeam) {
-            const username = document.getElementById('username-input').value.trim();
-            await (auth.currentUser || signInAnonymously(auth));
-            
-            const gameId = Math.random().toString(36).substring(2, 8).toUpperCase();
-            const gameRef = doc(db, "games", gameId);
-            
-            localPlayer = { id: auth.currentUser.uid, name: username, team: chosenTeam };
-            const initialData = { ...initialGameState, players: { [localPlayer.id]: localPlayer }, gameId };
-            
-            await setDoc(gameRef, initialData);
+        // --- ELEMENTOS DEL DOM ---
+        const appContainer = document.getElementById('app-container');
+        const phaseOverlayContainer = document.getElementById('phase-overlay-container');
+        const phaseText = document.getElementById('phase-text');
 
-            document.getElementById('team-selection').classList.add('hidden');
-            const waitingRoom = document.getElementById('waiting-room');
-            waitingRoom.classList.remove('hidden');
-            const codeDisplay = document.getElementById('game-code-display');
-            codeDisplay.textContent = gameId;
-            codeDisplay.onclick = () => navigator.clipboard.writeText(gameId).then(() => alert('Código copiado.'));
-            
-            startGame(gameId, localPlayer);
-        }
-
-        async function joinGame() {
-            const username = document.getElementById('username-input').value.trim();
-            if (!username) { alert("Por favor, ingresa un nombre de usuario."); return; }
-            
-            const gameId = prompt("Ingresa el ID de la partida:");
-            if (!gameId) return;
-
-            await (auth.currentUser || signInAnonymously(auth));
-            const userId = auth.currentUser.uid;
-            
-            const gameRef = doc(db, "games", gameId);
-            const gameDoc = await getDoc(gameRef);
-
-            if (!gameDoc.exists()) { alert("Partida no encontrada."); return; }
-
-            const gameData = gameDoc.data();
-            if (Object.keys(gameData.players).length >= 2) { alert("La sala está llena."); return; }
-            
-            const creator = Object.values(gameData.players)[0];
-            const joinerTeam = creator.team === 'PURPLE' ? 'ORANGE' : 'PURPLE';
-            localPlayer = { id: userId, name: username, team: joinerTeam };
-            
-            await updateDoc(gameRef, {
-                [`players.${userId}`]: localPlayer,
-                phase: 'BAN',
-                timerStart: serverTimestamp()
-            });
-            startGame(gameId, localPlayer);
-        }
-        
-        function startGame(gameId, playerInfo) {
-            localPlayer = playerInfo;
-            appContainer.innerHTML = '';
-            const draftTemplate = document.getElementById('draft-template');
-            appContainer.appendChild(draftTemplate.content.cloneNode(true));
-            
-            if(currentUnsubscribe) currentUnsubscribe();
-            currentUnsubscribe = onSnapshot(doc(db, "games", gameId), (doc) => {
-                if(doc.exists()){
-                    gameState = doc.data();
-                    if(gameState.phase === 'WAITING' && Object.keys(gameState.players).length < 2) {
-                        const statusDisplay = document.getElementById('draft-status');
-                        if (statusDisplay) statusDisplay.textContent = 'Esperando oponente...';
-                    } else {
-                         updateUI();
-                    }
+        // --- LÓGICA PRINCIPAL ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                // Si el usuario ya está en una partida (ej. recarga la página), lo vuelve a unir
+                const urlParams = new URLSearchParams(window.location.search);
+                const gameIdFromUrl = urlParams.get('game');
+                if (gameIdFromUrl) {
+                    await joinGame(gameIdFromUrl);
                 } else {
-                    alert("La partida ha terminado o fue cancelada por el anfitrión.");
-                    showLobby();
+                    renderView('lobby');
                 }
-            });
-        }
-        
-        function updateUI() {
-            const domDraft = {
-                pokemonGrid: document.getElementById('pokemon-grid'),
-                purpleTeamContainer: document.getElementById('purple-team'),
-                orangeTeamContainer: document.getElementById('orange-team'),
-                purpleBansContainer: document.getElementById('purple-bans'),
-                orangeBansContainer: document.getElementById('orange-bans'),
-                statusDisplay: document.getElementById('draft-status'),
-                confirmButton: document.getElementById('confirm-button'),
-                timer: document.getElementById('timer'),
-                purplePlayerName: document.getElementById('purple-player-name'),
-                orangePlayerName: document.getElementById('orange-player-name'),
-                exitButton: document.getElementById('exit-button'),
-                showDetailsButton: document.getElementById('show-details-button')
-            };
-
-            if (!domDraft.pokemonGrid) return;
-
-            domDraft.confirmButton.classList.toggle('hidden', !gameState.selectedPokemon || gameState.phase === 'DONE');
-            domDraft.confirmButton.disabled = !gameState.selectedPokemon || gameState.phase === 'DONE' || gameState.turn !== localPlayer.team;
-            
-            if (gameState.phase !== 'DONE') renderPokemonGrid(domDraft);
-            renderTeamSlots(domDraft);
-            renderBanSlots(domDraft);
-            updateStatus(domDraft);
-
-            domDraft.confirmButton.onclick = confirmSelection;
-            domDraft.exitButton.onclick = exitGame;
-        }
-
-        function renderPokemonGrid(domDraft) {
-            domDraft.pokemonGrid.innerHTML = '';
-            const activeRole = document.querySelector('.role-filter-btn.active')?.dataset.role || 'All';
-            const filteredPokemon = activeRole === 'All' ? pokemonData : pokemonData.filter(p => p.role === activeRole);
-            
-            const unavailable = new Set([...(gameState.purpleBans || []), ...(gameState.orangeBans || []), ...(gameState.purplePicks || []), ...(gameState.orangePicks || [])].map(p => p.id));
-            
-            filteredPokemon.forEach(pokemon => {
-                const card = document.createElement('div');
-                card.className = 'pokemon-card flex flex-col items-center justify-end p-1 text-center';
-                card.classList.add(`bg-role-${pokemon.role}`);
-                if (unavailable.has(pokemon.id)) {
-                    card.classList.add('disabled');
-                } else {
-                    card.onclick = () => {
-                        if(gameState.turn === localPlayer.team) {
-                            gameState.selectedPokemon = pokemon;
-                            updateUI();
-                        }
-                    };
-                    if(gameState.selectedPokemon && gameState.selectedPokemon.id === pokemon.id) card.classList.add('selected');
-                }
-                const imageUrl = `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat/stat-${pokemon.id}.png`;
-                card.innerHTML = `<img src="${imageUrl}" alt="${pokemon.name}" class="w-16 h-16 object-contain" onerror="this.onerror=null;this.src='https://placehold.co/64x64/1e293b/94a3b8?text=?';"><span class="text-xs font-bold mt-1 text-white" style="text-shadow: 1px 1px 2px black;">${pokemon.name}</span>`;
-                domDraft.pokemonGrid.appendChild(card);
-            });
-        }
-        
-        // ... (resto de funciones como renderTeamSlots, renderBanSlots, etc.) ...
-
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                signInAnonymously(auth);
+            } else {
+                await signInAnonymously(auth);
             }
         });
 
-        showLobby();
+        // --- RENDERIZADO DE VISTAS ---
+        function renderView(viewName, data = {}) {
+            appContainer.innerHTML = '';
+            const template = document.getElementById(`${viewName}-template`);
+            if (template) {
+                const viewContent = template.content.cloneNode(true);
+                appContainer.appendChild(viewContent);
+                // Una vez renderizada la vista, adjuntamos los listeners
+                attachEventListeners(viewName, data);
+            } else {
+                console.error(`Vista no encontrada: ${viewName}`);
+            }
+        }
+        
+        // --- MANEJO DE EVENTOS ---
+        function attachEventListeners(viewName, data) {
+            if (viewName === 'lobby') {
+                document.getElementById('create-game-button').addEventListener('click', createGame);
+                document.getElementById('join-game-button').addEventListener('click', () => {
+                    const gameCode = prompt("Ingresa el código de la partida:");
+                    if (gameCode) joinGame(gameCode.toUpperCase());
+                });
+                // Recuperar nombre de usuario guardado
+                const savedUsername = localStorage.getItem('username');
+                if (savedUsername) {
+                    document.getElementById('username-input').value = savedUsername;
+                }
+            } else if (viewName === 'draft') {
+                populatePokemonGrid(data.gameState);
+                updateDraftUI(data.gameState);
+                document.getElementById('exit-button').addEventListener('click', exitGame);
+                document.getElementById('confirm-button')?.addEventListener('click', confirmSelection);
+            }
+        }
+
+        // --- FUNCIONES DEL LOBBY ---
+        async function createGame() {
+            const username = getAndSaveUsername();
+            if (!username) return;
+
+            const gameId = generateGameId();
+            currentGameId = gameId;
+
+            const gameRef = doc(db, 'games', gameId);
+            const initialGameState = {
+                players: {},
+                phase: 'waiting', // waiting, bans, picks, finished
+                turn: '', // 'purple' o 'orange'
+                bans: { purple: [], orange: [] },
+                picks: { purple: [], orange: [] },
+                createdAt: serverTimestamp(),
+                draftOrder: ['purple', 'orange', 'orange', 'purple', 'purple', 'orange'], // Orden de bans
+                pickOrder: ['purple', 'orange', 'orange', 'purple', 'purple', 'orange', 'orange', 'purple', 'purple', 'orange'], // Orden de picks
+                turnIndex: 0,
+                timerStart: null,
+            };
+            
+            await setDoc(gameRef, initialGameState);
+            
+            // Mostrar sala de espera
+            document.getElementById('lobby-buttons').classList.add('hidden');
+            document.getElementById('waiting-room').classList.remove('hidden');
+            const gameCodeDisplay = document.getElementById('game-code-display');
+            gameCodeDisplay.textContent = gameId;
+            gameCodeDisplay.addEventListener('click', () => copyToClipboard(gameId));
+            
+            document.getElementById('team-selection').classList.remove('hidden');
+
+            document.getElementById('choose-purple').onclick = () => chooseTeam('purple', gameId, username);
+            document.getElementById('choose-orange').onclick = () => chooseTeam('orange', gameId, username);
+        }
+
+        async function joinGame(gameId) {
+            const username = getAndSaveUsername();
+            if (!username) return;
+        
+            const gameRef = doc(db, 'games', gameId);
+            const gameSnap = await getDoc(gameRef);
+        
+            if (!gameSnap.exists()) {
+                alert("Partida no encontrada.");
+                return;
+            }
+            
+            currentGameId = gameId;
+            const gameState = gameSnap.data();
+
+            const availableTeams = [];
+            if (!gameState.players.purple) availableTeams.push('purple');
+            if (!gameState.players.orange) availableTeams.push('orange');
+
+            if (availableTeams.length === 0) {
+                 // Modo espectador o reconexión
+                const isPlayer = Object.values(gameState.players).some(p => p.id === currentUser.uid);
+                if (isPlayer) {
+                    console.log("Reconectando a la partida...");
+                    listenToGame(gameId);
+                } else {
+                    alert("La partida ya está llena.");
+                    currentGameId = null;
+                }
+                return;
+            }
+
+            // Si solo queda un equipo, se une automáticamente. Si no, muestra opciones.
+            if(availableTeams.length === 1) {
+                await chooseTeam(availableTeams[0], gameId, username);
+            } else {
+                renderView('lobby');
+                document.getElementById('lobby-buttons').classList.add('hidden');
+                document.getElementById('waiting-room').classList.remove('hidden');
+                document.getElementById('game-code-display').textContent = `Uniéndose a ${gameId}...`;
+                const teamSelection = document.getElementById('team-selection');
+                teamSelection.classList.remove('hidden');
+
+                // Deshabilitar botones de equipos ya tomados
+                document.getElementById('choose-purple').disabled = !availableTeams.includes('purple');
+                document.getElementById('choose-orange').disabled = !availableTeams.includes('orange');
+                
+                document.getElementById('choose-purple').onclick = () => chooseTeam('purple', gameId, username);
+                document.getElementById('choose-orange').onclick = () => chooseTeam('orange', gameId, username);
+            }
+        }
+
+        async function chooseTeam(team, gameId, username) {
+            const gameRef = doc(db, 'games', gameId);
+            const gameSnap = await getDoc(gameRef);
+
+            if(gameSnap.exists() && !gameSnap.data().players[team]) {
+                await updateDoc(gameRef, {
+                    [`players.${team}`]: { id: currentUser.uid, name: username }
+                });
+                listenToGame(gameId);
+            } else {
+                alert(`El equipo ${team} ya está ocupado.`);
+            }
+        }
+        
+        function listenToGame(gameId) {
+            currentGameId = gameId;
+            // Actualiza la URL para permitir recargar la página
+            window.history.pushState({}, '', `?game=${gameId}`);
+
+            const gameRef = doc(db, 'games', gameId);
+            unsubscribeGame = onSnapshot(gameRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const gameState = docSnap.data();
+                    handleGameStateChange(gameState);
+                } else {
+                    // La partida fue eliminada (ej. el creador se fue)
+                    alert("La partida ha terminado.");
+                    exitGame();
+                }
+            });
+        }
+        
+        async function handleGameStateChange(gameState) {
+             // Si ambos jugadores están listos, iniciar el drafteo
+            if (gameState.phase === 'waiting' && gameState.players.purple && gameState.players.orange) {
+                const nextTurn = gameState.draftOrder[0];
+                await updateDoc(doc(db, 'games', currentGameId), {
+                    phase: 'bans',
+                    turn: nextTurn,
+                    turnIndex: 0,
+                    timerStart: serverTimestamp()
+                });
+                return; // La actualización disparará otro snapshot
+            }
+            
+            // Si la vista actual no es 'draft', la renderiza
+            if (!document.getElementById('draft-template-container')) {
+                 renderView('draft', { gameState });
+            } else {
+                 // Si ya está en la vista de draft, solo actualiza la UI
+                 updateDraftUI(gameState);
+            }
+        }
+        
+        // --- FUNCIONES DEL DRAFTEO ---
+        function updateDraftUI(gameState) {
+            if (!appContainer.querySelector('#pokemon-grid')) {
+                console.error("Intentando actualizar UI de draft, pero la vista no está cargada.");
+                return;
+            }
+
+            // Actualizar nombres de jugadores
+            updatePlayerNames(gameState.players);
+
+            // Actualizar equipos (picks)
+            updateTeamDisplay('purple', gameState.picks.purple);
+            updateTeamDisplay('orange', gameState.picks.orange);
+
+            // Actualizar bans
+            updateBanDisplay('purple', gameState.bans.purple);
+            updateBanDisplay('orange', gameState.bans.orange);
+
+            // Actualizar estado (ej. "Banea Equipo Morado") y timer
+            updateDraftStatusAndTimer(gameState);
+
+            // Deshabilitar Pokémon ya seleccionados
+            updatePokemonGrid(gameState);
+
+            // Mostrar u ocultar el botón de confirmar
+            const myTeam = getMyTeam(gameState);
+            const isMyTurn = myTeam === gameState.turn;
+            const confirmButton = document.getElementById('confirm-button');
+            confirmButton.classList.toggle('hidden', !isMyTurn || gameState.phase === 'finished');
+            confirmButton.disabled = !selectedPokemonId || !isMyTurn;
+        }
+
+        function updatePlayerNames(players) {
+            const ids = ['purple-player-name', 'purple-player-name-mobile', 'orange-player-name', 'orange-player-name-mobile'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const team = id.includes('purple') ? 'purple' : 'orange';
+                    el.textContent = players[team]?.name || `Equipo ${team.charAt(0).toUpperCase() + team.slice(1)}`;
+                }
+            });
+        }
+
+        function populatePokemonGrid(gameState) {
+            const grid = document.getElementById('pokemon-grid');
+            grid.innerHTML = '';
+            pokemonData.forEach(p => {
+                const card = createPokemonCard(p);
+                grid.appendChild(card);
+            });
+            attachPokemonCardListeners(gameState);
+        }
+
+        function updatePokemonGrid(gameState) {
+             const allBans = [...gameState.bans.purple, ...gameState.bans.orange];
+             const allPicks = [...gameState.picks.purple, ...gameState.picks.orange];
+             const disabledPokemons = new Set([...allBans, ...allPicks]);
+             
+             document.querySelectorAll('.pokemon-card').forEach(card => {
+                const pokemonId = card.dataset.pokemonId;
+                card.classList.toggle('disabled', disabledPokemons.has(pokemonId));
+                card.classList.toggle('selected', pokemonId === selectedPokemonId);
+             });
+        }
+
+        function attachPokemonCardListeners(gameState) {
+            document.querySelectorAll('.pokemon-card:not(.disabled)').forEach(card => {
+                card.addEventListener('click', () => {
+                     const myTeam = getMyTeam(gameState);
+                     if (gameState.turn !== myTeam) return; // No es mi turno
+                     
+                     const pokemonId = card.dataset.pokemonId;
+                     // Des-seleccionar si se hace clic en el mismo
+                     if (selectedPokemonId === pokemonId) {
+                         selectedPokemonId = null;
+                     } else {
+                         selectedPokemonId = pokemonId;
+                     }
+                     // Actualizar visualmente la selección
+                     updatePokemonGrid(gameState);
+                     document.getElementById('confirm-button').disabled = !selectedPokemonId;
+                });
+            });
+        }
+        
+        function updateDraftStatusAndTimer(gameState) {
+            const statusEl = document.getElementById('draft-status');
+            const timerEl = document.getElementById('timer');
+            const { phase, turn, players } = gameState;
+
+            clearInterval(countdownInterval);
+
+            if (phase === 'finished') {
+                statusEl.textContent = "¡Drafteo Finalizado!";
+                timerEl.textContent = 'GG';
+                showPhaseOverlay("¡DRAFTEO FINALIZADO!");
+                return;
+            }
+            
+            const turnTeamName = turn.charAt(0).toUpperCase() + turn.slice(1);
+            const turnPlayerName = players[turn]?.name || `Equipo ${turnTeamName}`;
+            const actionText = phase === 'bans' ? 'Banea' : 'Elige';
+            
+            statusEl.textContent = `${actionText} ${turnPlayerName}`;
+            statusEl.style.color = turn === 'purple' ? '#c084fc' : '#fb923c';
+
+            // Timer
+            const DRAFT_TIME = 30; // segundos por turno
+            if (gameState.timerStart) {
+                countdownInterval = setInterval(() => {
+                    const serverTimeOffset = 0; // Se podría calcular una latencia más precisa
+                    const startTime = gameState.timerStart.toMillis();
+                    const now = Date.now() + serverTimeOffset;
+                    const elapsed = Math.floor((now - startTime) / 1000);
+                    const remaining = Math.max(0, DRAFT_TIME - elapsed);
+                    timerEl.textContent = remaining;
+
+                    if (remaining <= 0) {
+                        clearInterval(countdownInterval);
+                        // TODO: Lógica para auto-selección o penalización si se acaba el tiempo
+                    }
+                }, 1000);
+            }
+            
+             // Animación de cambio de fase
+            if (gameState.turnIndex === 0 && (phase === 'bans' || phase === 'picks')) {
+                const phaseName = phase === 'bans' ? "FASE DE BLOQUEO" : "FASE DE SELECCIÓN";
+                showPhaseOverlay(phaseName);
+            }
+            
+            // Indicar visualmente qué slot se está eligiendo
+            document.querySelectorAll('.team-slot').forEach(slot => slot.classList.remove('picking'));
+            const currentTurnTeam = gameState.turn;
+            if (phase === 'picks') {
+                const pickIndex = gameState.picks[currentTurnTeam].length;
+                const slot = document.querySelector(`#${currentTurnTeam}-team .team-slot:nth-child(${pickIndex + 1}), #${currentTurnTeam}-team-mobile .team-slot:nth-child(${pickIndex + 1})`);
+                if (slot) slot.classList.add('picking');
+            }
+        }
+
+        async function confirmSelection() {
+            if (!selectedPokemonId || !currentGameId) return;
+
+            const gameRef = doc(db, 'games', currentGameId);
+            const gameSnap = await getDoc(gameRef);
+            if (!gameSnap.exists()) return;
+
+            const gameState = gameSnap.data();
+            const myTeam = getMyTeam(gameState);
+
+            // Doble chequeo para evitar selecciones fuera de turno
+            if (gameState.turn !== myTeam) {
+                console.warn("Intento de confirmar fuera de turno.");
+                return;
+            }
+
+            const currentPhase = gameState.phase; // 'bans' o 'picks'
+            const turnIndex = gameState.turnIndex + 1;
+
+            let nextPhase = currentPhase;
+            let nextTurnOrder = currentPhase === 'bans' ? gameState.draftOrder : gameState.pickOrder;
+            let nextTurn = nextTurnOrder[turnIndex];
+
+            const updates = {
+                [`${currentPhase}.${myTeam}`]: [...gameState[currentPhase][myTeam], selectedPokemonId],
+                turnIndex: turnIndex,
+                timerStart: serverTimestamp()
+            };
+
+            // Transición de fase de bans a picks
+            if (currentPhase === 'bans' && turnIndex >= gameState.draftOrder.length) {
+                nextPhase = 'picks';
+                updates.turnIndex = 0;
+                nextTurn = gameState.pickOrder[0];
+            } 
+            // Fin del drafteo
+            else if (currentPhase === 'picks' && turnIndex >= gameState.pickOrder.length) {
+                nextPhase = 'finished';
+                nextTurn = ''; // Nadie tiene el turno
+            }
+            
+            updates.phase = nextPhase;
+            updates.turn = nextTurn;
+
+            await updateDoc(gameRef, updates);
+            
+            // Resetear selección local
+            selectedPokemonId = null;
+        }
+
+        // --- FUNCIONES DE AYUDA (UI) ---
+        function createPokemonCard(pokemon) {
+            const card = document.createElement('div');
+            card.className = `pokemon-card p-2 flex flex-col items-center justify-center text-center modern-panel bg-role-${pokemon.role.replace(' ', '-')}`;
+            card.dataset.pokemonId = pokemon.id;
+            
+            const img = document.createElement('img');
+            img.src = `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat.png`;
+            img.alt = pokemon.name;
+            img.className = 'w-16 h-16 object-contain';
+            img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=${pokemon.name.substring(0,2)}`; }; // Fallback
+            
+            const name = document.createElement('span');
+            name.className = 'text-xs font-semibold mt-1 truncate w-full';
+            name.textContent = pokemon.name;
+            
+            card.appendChild(img);
+            card.appendChild(name);
+            return card;
+        }
+
+        function createTeamSlot(pokemonId = null, isBan = false) {
+            const slot = document.createElement('div');
+            if (isBan) {
+                slot.className = 'w-12 h-12 modern-panel flex items-center justify-center';
+            } else {
+                 slot.className = 'team-slot h-24 modern-panel flex flex-col items-center justify-center gap-1 p-2';
+            }
+
+            if (pokemonId) {
+                const pokemon = pokemonData.find(p => p.id === pokemonId);
+                const img = document.createElement('img');
+                img.src = `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat.png`;
+                img.alt = pokemon.name;
+                img.className = isBan ? 'w-10 h-10' : 'w-16 h-16';
+                img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=${pokemon.name.substring(0,2)}`; };
+                slot.appendChild(img);
+                if (!isBan) {
+                    const name = document.createElement('span');
+                    name.className = 'text-xs font-bold';
+                    name.textContent = pokemon.name;
+                    slot.appendChild(name);
+                }
+            } else {
+                slot.textContent = isBan ? 'BAN' : 'PICK';
+                slot.classList.add('text-slate-500', 'text-xs', 'font-bold');
+            }
+            return slot;
+        }
+
+        function updateTeamDisplay(team, picks) {
+            const teamContainer = document.getElementById(`${team}-team`);
+            const teamContainerMobile = document.getElementById(`${team}-team-mobile`);
+            if (!teamContainer || !teamContainerMobile) return;
+            
+            teamContainer.innerHTML = '';
+            teamContainerMobile.innerHTML = '';
+            
+            for(let i = 0; i < 5; i++) {
+                const pick = picks[i] || null;
+                teamContainer.appendChild(createTeamSlot(pick));
+                // Para mobile, hacemos una versión más pequeña
+                const mobileSlot = document.createElement('div');
+                mobileSlot.className = 'team-slot w-16 h-16 modern-panel flex items-center justify-center';
+                 if (pick) {
+                    const pokemon = pokemonData.find(p => p.id === pick);
+                    const img = document.createElement('img');
+                    img.src = `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat.png`;
+                    img.alt = pokemon.name;
+                    img.className = 'w-12 h-12';
+                    mobileSlot.appendChild(img);
+                }
+                teamContainerMobile.appendChild(mobileSlot);
+            }
+        }
+        
+        function updateBanDisplay(team, bans) {
+            const banContainer = document.getElementById(`${team}-bans`);
+            if (!banContainer) return;
+
+            banContainer.innerHTML = '';
+            for(let i = 0; i < 3; i++) {
+                 const ban = bans[i] || null;
+                 banContainer.appendChild(createTeamSlot(ban, true));
+            }
+        }
+        
+        function showPhaseOverlay(text) {
+            phaseText.textContent = text;
+            phaseOverlayContainer.classList.add('phase-overlay-active');
+            phaseOverlayContainer.classList.remove('hidden');
+
+            // Ocultar después de la animación
+            setTimeout(() => {
+                phaseOverlayContainer.classList.remove('phase-overlay-active');
+                phaseOverlayContainer.classList.add('hidden');
+            }, 3000); // Duración de la animación
+        }
+
+        // --- FUNCIONES DE AYUDA (GENERAL) ---
+        function getAndSaveUsername() {
+            const usernameInput = document.getElementById('username-input');
+            const username = usernameInput.value.trim();
+            if (!username) {
+                alert("Por favor, ingresa un nombre de usuario.");
+                return null;
+            }
+            localStorage.setItem('username', username);
+            return username;
+        }
+
+        function generateGameId() {
+            return Math.random().toString(36).substring(2, 7).toUpperCase();
+        }
+
+        function getMyTeam(gameState) {
+            if (gameState.players.purple?.id === currentUser.uid) return 'purple';
+            if (gameState.players.orange?.id === currentUser.uid) return 'orange';
+            return null; // Espectador
+        }
+        
+        async function exitGame() {
+            if (unsubscribeGame) {
+                unsubscribeGame();
+                unsubscribeGame = null;
+            }
+        
+            if (currentGameId) {
+                // Lógica opcional para manejar la salida de un jugador
+                // Por simplicidad, aquí solo borramos la partida si es el último jugador
+                // En una app real, podrías querer permitir que se reconecten.
+                const gameRef = doc(db, 'games', currentGameId);
+                const gameSnap = await getDoc(gameRef);
+                if (gameSnap.exists()) {
+                    const players = Object.values(gameSnap.data().players);
+                    if (players.length <= 1) {
+                         await deleteDoc(gameRef);
+                    }
+                }
+            }
+
+            currentGameId = null;
+            window.history.pushState({}, '', window.location.pathname);
+            renderView('lobby');
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert(`Código "${text}" copiado al portapapeles.`);
+            }, (err) => {
+                console.error('Error al copiar: ', err);
+            });
+        }
+
+        // --- INICIO DE LA APLICACIÓN ---
+        // Renderiza el lobby en cuanto el script se carga
+        renderView('lobby');
+
     </script>
 </body>
 </html>
