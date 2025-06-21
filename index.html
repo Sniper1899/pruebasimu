@@ -33,21 +33,21 @@
         .secondary-button { background-color: rgba(30, 41, 59, 0.5); border: 1px solid #334155; transition: all 0.2s; }
         .secondary-button:hover { background-color: rgba(51, 65, 85, 0.7); border-color: #475569; }
         .team-slot.picking { transform: scale(1.03); box-shadow: 0 0 20px, 0 0 10px inset; border-color: #facc15; }
-        #pokemon-grid::-webkit-scrollbar, .modal-content::-webkit-scrollbar { width: 8px; }
-        #pokemon-grid::-webkit-scrollbar-track, .modal-content::-webkit-scrollbar-track { background: transparent; }
-        #pokemon-grid::-webkit-scrollbar-thumb, .modal-content::-webkit-scrollbar-thumb { background-color: #38bdf8; border-radius: 20px; border: 2px solid transparent; background-clip: content-box;}
+        #pokemon-grid::-webkit-scrollbar, body::-webkit-scrollbar { width: 8px; }
+        #pokemon-grid::-webkit-scrollbar-track, body::-webkit-scrollbar-track { background: transparent; }
+        #pokemon-grid::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb { background-color: #38bdf8; border-radius: 20px; border: 2px solid transparent; background-clip: content-box;}
         @keyframes phase-anim { 0%, 100% { opacity: 0; transform: scale(0.8) translateY(20px); } 10%, 90% { opacity: 1; transform: scale(1) translateY(0); } }
         .phase-overlay { animation: phase-anim 3s ease-in-out forwards; text-shadow: 0 0 15px rgba(255,255,255,0.8); }
     </style>
 </head>
 <body class="p-2 sm:p-4">
 
-    <div id="app-container" class="w-full max-w-screen-xl mx-auto flex flex-col min-h-screen relative z-10">
+    <div id="app-container" class="w-full max-w-screen-xl mx-auto flex flex-col relative z-10" style="min-height: 95vh;">
         <!-- El contenido se renderizará aquí -->
     </div>
     
     <template id="lobby-template">
-       <div class="flex flex-col h-screen justify-center items-center gap-6">
+       <div class="flex flex-col h-full justify-center items-center gap-6">
             <header class="text-center shrink-0">
                 <h1 class="text-4xl sm:text-5xl font-extrabold main-title">SIMULADOR DE DRAFTEO ONLINE</h1>
                 <p class="text-slate-300 font-semibold">Creado por: <span class="font-bold text-cyan-400">antuan</span></p>
@@ -75,7 +75,7 @@
     </template>
 
     <template id="draft-template">
-        <div class="flex flex-col h-screen">
+        <div class="flex flex-col flex-grow min-h-0">
              <div id="top-bar" class="flex flex-col md:flex-row justify-between items-center mb-4 px-4 shrink-0">
                 <div class="w-full md:w-1/3 flex justify-center md:justify-start items-center gap-2 order-2 md:order-1 my-2 md:my-0">
                     <div id="purple-bans" class="flex justify-center gap-2"></div>
@@ -111,7 +111,7 @@
     <div id="phase-overlay-container" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
         <h2 id="phase-text" class="text-6xl font-extrabold text-white text-center"></h2>
     </div>
-
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -131,7 +131,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-
+        
         let localPlayer = {};
         let currentUnsubscribe;
         let timerInterval;
@@ -141,7 +141,7 @@
         const pokemonData = [
             { id: "venusaur", name: "Venusaur", role: "Attacker"}, { id: "charizard", name: "Charizard", role: "All-Rounder"}, { id: "blastoise", name: "Blastoise", role: "Defender"}, { id: "pikachu", name: "Pikachu", role: "Attacker"}, { id: "clefable", name: "Clefable", role: "Supporter"}, { id: "alolan-ninetales", name: "A. Ninetales", role: "Attacker"}, { id: "wigglytuff", name: "Wigglytuff", role: "Supporter"}, { id: "machamp", name: "Machamp", role: "All-Rounder"}, { id: "slowbro", name: "Slowbro", role: "Defender"}, { id: "gengar", name: "Gengar", role: "Speedster"}, { id: "mr-mime", name: "Mr. Mime", role: "Supporter"}, { id: "gyarados", name: "Gyarados", role: "All-Rounder"}, { id: "snorlax", name: "Snorlax", role: "Defender"}, { id: "dragonite", name: "Dragonite", role: "All-Rounder"}, { id: "mewtwo-x", name: "Mewtwo X", role: "All-Rounder"}, { id: "mewtwo-y", name: "Mewtwo Y", role: "Attacker"}, { id: "mew", name: "Mew", role: "Attacker"}, { id: "azumarill", name: "Azumarill", role: "All-Rounder"}, { id: "espeon", name: "Espeon", role: "Attacker"}, { id: "umbreon", name: "Umbreon", role: "Defender"}, { id: "scizor", name: "Scizor", role: "All-Rounder"}, { id: "blissey", name: "Blissey", role: "Supporter"}, { id: "tyranitar", name: "Tyranitar", role: "All-Rounder"}, { id: "gardevoir", name: "Gardevoir", role: "Attacker"}, { id: "sableye", name: "Sableye", role: "Supporter"}, { id: "absol", name: "Absol", role: "Speedster"}, { id: "metagross", name: "Metagross", role: "All-Rounder"}, { id: "garchomp", name: "Garchomp", role: "All-Rounder"}, { id: "lucario", name: "Lucario", role: "All-Rounder"}, { id: "leafeon", name: "Leafeon", role: "Speedster"}, { id: "glaceon", name: "Glaceon", role: "Attacker"}, { id: "crustle", name: "Crustle", role: "Defender"}, { id: "greninja", name: "Greninja", role: "Attacker"}, { id: "talonflame", name: "Talonflame", role: "Speedster"}, { id: "aegislash", name: "Aegislash", role: "All-Rounder"}, { id: "sylveon", name: "Sylveon", role: "Attacker"}, { id: "goodra", name: "Goodra", role: "Defender"}, { id: "trevenant", name: "Trevenant", role: "Defender"}, { id: "hoopa", name: "Hoopa", role: "Supporter"}, { id: "decidueye", name: "Decidueye", role: "Attacker"}, { id: "tsareena", name: "Tsareena", role: "All-Rounder"}, { id: "comfey", name: "Comfey", role: "Supporter"}, { id: "cinderace", name: "Cinderace", role: "Attacker"}, { id: "inteleon", name: "Inteleon", role: "Attacker"}, { id: "eldegoss", name: "Eldegoss", role: "Supporter"}, { id: "cramorant", name: "Cramorant", role: "Attacker"}, { id: "duraludon", name: "Duraludon", role: "Attacker"}, { id: "zeraora", name: "Zeraora", role: "Speedster"}, { id: "lapras", name: "Lapras", role: "Defender"}, { id: "chandelure", name: "Chandelure", role: "Attacker"}, { id: "dodrio", name: "Dodrio", role: "Speedster"}, { id: "buzzwole", name: "Buzzwole", role: "All-Rounder"}, { id: "zacian", name: "Zacian", role: "All-Rounder"}, { id: "urshifu", name: "Urshifu", role: "All-Rounder"}, { id: "dragapult", name: "Dragapult", role: "Attacker"}, { id: "mamoswine", name: "Mamoswine", role: "Defender"}, { id: "delphox", name: "Delphox", role: "Attacker"}, { id: "zoroark", name: "Zoroark", role: "Speedster"}, { id: "mimikyu", name: "Mimikyu", role: "All-Rounder"}, { id: "falinks", name: "Falinks", role: "All-Rounder"}, { id: "blaziken", name: "Blaziken", role: "All-Rounder"}, { id: "meowscarada", name: "Meowscarada", role: "Speedster"}, { id: "miraidon", name: "Miraidon", role: "Attacker"}, { id: "ceruledge", name: "Ceruledge", role: "All-Rounder"}, { id: "armarouge", name: "Armarouge", role: "Attacker"}, { id: "alcremie", name: "Alcremie", role: "Supporter"}, { id: "ho-oh", name: "Ho-Oh", role: "Defender"}, { id: "alolan-raichu", name: "A. Raichu", role: "Attacker"}, { id: "darkrai", name: "Darkrai", role: "Speedster"}, { id: "greedent", name: "Greedent", role: "Defender"}, { id: "suicune", name: "Suicune", role: "All-Rounder"}, { id: "tinkaton", name: "Tinkaton", role: "All-Rounder"}
             ].sort((a, b) => a.name.localeCompare(b.name));
-        
+            
         const initialGameState = { phase: 'WAITING', turn: 'PURPLE', purpleBans: [], orangeBans: [], purplePicks: [], orangePicks: [], pickOrderIndex: 0, banOrderIndex: 0, selectedPokemon: {}, players: {} };
         const pickOrder = [ { team: 'PURPLE', count: 1 }, { team: 'ORANGE', count: 2 }, { team: 'PURPLE', count: 2 }, { team: 'ORANGE', count: 2 }, { team: 'PURPLE', count: 2 }, { team: 'ORANGE', count: 1 } ];
         const banOrder = [ { team: 'PURPLE', count: 1 }, { team: 'ORANGE', count: 1 }, { team: 'PURPLE', count: 1 }, { team: 'ORANGE', count: 1 } ];
@@ -220,8 +220,10 @@
         
         function startGame(gameId, playerInfo) {
             localPlayer = playerInfo;
-            appContainer.innerHTML = document.getElementById('draft-template').content.cloneNode(true);
-
+            appContainer.innerHTML = '';
+            const draftTemplate = document.getElementById('draft-template');
+            appContainer.appendChild(draftTemplate.content.cloneNode(true));
+            
             if(currentUnsubscribe) currentUnsubscribe();
             currentUnsubscribe = onSnapshot(doc(db, "games", gameId), (doc) => {
                 if(doc.exists()){
@@ -240,8 +242,7 @@
         }
         
         function updateUI() {
-            // Re-bind DOM elements inside draft container
-            const draftDom = {
+            const domDraft = {
                 pokemonGrid: document.getElementById('pokemon-grid'),
                 purpleTeamContainer: document.getElementById('purple-team'),
                 orangeTeamContainer: document.getElementById('orange-team'),
@@ -253,34 +254,57 @@
                 purplePlayerName: document.getElementById('purple-player-name'),
                 orangePlayerName: document.getElementById('orange-player-name'),
                 exitButton: document.getElementById('exit-button'),
+                showDetailsButton: document.getElementById('show-details-button')
             };
 
-            if(!draftDom.pokemonGrid) return; // Exit if draft UI not rendered yet
+            if (!domDraft.pokemonGrid) return;
 
-            renderTeamSlots(draftDom);
-            renderBanSlots(draftDom);
-            updateStatus(draftDom);
+            domDraft.confirmButton.classList.toggle('hidden', !gameState.selectedPokemon || gameState.phase === 'DONE');
+            domDraft.confirmButton.disabled = !gameState.selectedPokemon || gameState.phase === 'DONE' || gameState.turn !== localPlayer.team;
+            
+            if (gameState.phase !== 'DONE') renderPokemonGrid(domDraft);
+            renderTeamSlots(domDraft);
+            renderBanSlots(domDraft);
+            updateStatus(domDraft);
 
-            // Add event listeners
-            document.getElementById('reset-button')?.addEventListener('click', () => { /* Logic to exit/reset */ });
-            document.getElementById('confirm-button')?.addEventListener('click', confirmSelection);
-            document.querySelectorAll('.role-filter-btn').forEach(button => {
-                button.onclick = () => {
-                    document.querySelectorAll('.role-filter-btn').forEach(btn => btn.classList.remove('active'));
-                    button.classList.add('active');
-                    renderPokemonGrid(draftDom);
-                }
-            });
-            document.querySelector('.role-filter-btn[data-role="All"]').classList.add('active');
-
-            renderPokemonGrid(draftDom);
+            domDraft.confirmButton.onclick = confirmSelection;
+            domDraft.exitButton.onclick = exitGame;
         }
 
-        // The rest of your functions (renderPokemonGrid, renderTeamSlots, etc.) go here
-        // Make sure they accept the `dom` object as an argument
+        function renderPokemonGrid(domDraft) {
+            domDraft.pokemonGrid.innerHTML = '';
+            const activeRole = document.querySelector('.role-filter-btn.active')?.dataset.role || 'All';
+            const filteredPokemon = activeRole === 'All' ? pokemonData : pokemonData.filter(p => p.role === activeRole);
+            
+            const unavailable = new Set([...(gameState.purpleBans || []), ...(gameState.orangeBans || []), ...(gameState.purplePicks || []), ...(gameState.orangePicks || [])].map(p => p.id));
+            
+            filteredPokemon.forEach(pokemon => {
+                const card = document.createElement('div');
+                card.className = 'pokemon-card flex flex-col items-center justify-end p-1 text-center';
+                card.classList.add(`bg-role-${pokemon.role}`);
+                if (unavailable.has(pokemon.id)) {
+                    card.classList.add('disabled');
+                } else {
+                    card.onclick = () => {
+                        if(gameState.turn === localPlayer.team) {
+                            gameState.selectedPokemon = pokemon;
+                            updateUI();
+                        }
+                    };
+                    if(gameState.selectedPokemon && gameState.selectedPokemon.id === pokemon.id) card.classList.add('selected');
+                }
+                const imageUrl = `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat/stat-${pokemon.id}.png`;
+                card.innerHTML = `<img src="${imageUrl}" alt="${pokemon.name}" class="w-16 h-16 object-contain" onerror="this.onerror=null;this.src='https://placehold.co/64x64/1e293b/94a3b8?text=?';"><span class="text-xs font-bold mt-1 text-white" style="text-shadow: 1px 1px 2px black;">${pokemon.name}</span>`;
+                domDraft.pokemonGrid.appendChild(card);
+            });
+        }
         
+        // ... (resto de funciones como renderTeamSlots, renderBanSlots, etc.) ...
+
         onAuthStateChanged(auth, (user) => {
-            if (!user) signInAnonymously(auth);
+            if (!user) {
+                signInAnonymously(auth);
+            }
         });
 
         showLobby();
