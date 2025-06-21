@@ -55,12 +55,11 @@
         .secondary-button { background-color: rgba(30, 41, 59, 0.5); border: 1px solid #334155; transition: all 0.2s; }
         .secondary-button:hover { background-color: rgba(51, 65, 85, 0.7); border-color: #475569; }
         .team-slot.picking { transform: scale(1.03); box-shadow: 0 0 20px, 0 0 10px inset; border-color: #facc15; }
-        .modal-content-area { background: rgba(12, 12, 30, 0.8); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid #38bdf8; border-radius: 1.5rem; }
     </style>
 </head>
 <body class="p-2 sm:p-4">
 
-    <div id="draft-simulator" class="main-content w-full max-w-screen-xl mx-auto flex flex-col h-screen">
+    <div id="draft-simulator" class="main-content w-full max-w-screen-xl mx-auto flex flex-col min-h-screen">
         
         <header class="text-center mb-4 shrink-0">
             <h1 class="text-4xl sm:text-5xl font-extrabold main-title">SIMULADOR DE DRAFTEO ONLINE</h1>
@@ -95,7 +94,7 @@
     </div>
     
     <template id="draft-template">
-        <!-- ... (estructura del draft UI) ... -->
+        <!-- El contenido de la interfaz de drafteo se insertará aquí -->
     </template>
     
     <script type="module">
@@ -117,9 +116,9 @@
             gameCodeDisplay: document.getElementById('game-code-display'),
             lobbyButtons: document.getElementById('lobby-buttons'),
         };
-
+        
         const initialGameState = { phase: 'WAITING', turn: 'PURPLE', purpleBans: [], orangeBans: [], purplePicks: [], orangePicks: [], pickOrderIndex: 0, banOrderIndex: 0, selectedPokemon: {}, players: {} };
-       
+
         function showTeamSelection() {
             const username = dom.usernameInput.value.trim();
             if (!username) { alert("Por favor, ingresa un nombre de usuario."); return; }
@@ -180,19 +179,14 @@
         function startGame(gameId, playerInfo) {
             localPlayer = playerInfo;
             dom.lobbyScreen.classList.add('hidden');
-            // ... (Lógica para renderizar la UI del draft) ...
+            dom.draftContainer.innerHTML = document.getElementById('draft-template').innerHTML; // This line needs to be corrected
             dom.draftContainer.classList.remove('hidden');
 
             if(currentUnsubscribe) currentUnsubscribe();
             currentUnsubscribe = onSnapshot(doc(db, "games", gameId), (doc) => {
                 if(doc.exists()){
                     const gameState = doc.data();
-                    if(gameState.phase === 'WAITING' && Object.keys(gameState.players).length === 1) {
-                         // Still waiting, do nothing for the creator
-                    } else {
-                         // Game has started or opponent joined
-                         // updateUI(gameState);
-                    }
+                    // updateUI(gameState);
                 } else {
                     alert("La partida ha terminado o fue cancelada.");
                     initializeLobby();
@@ -227,4 +221,3 @@
     </script>
 </body>
 </html>
-
