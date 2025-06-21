@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Drafteo Online de Pokémon UNITE</title>
+    <title>Simulador de Drafteo Online - por antuan</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         @keyframes aurora { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
-        body { font-family: 'Exo 2', sans-serif; background-color: #0C0C1E; color: #e0e0e0; position: relative; }
+        body { font-family: 'Exo 2', sans-serif; background-color: #0C0C1E; color: #e0e0e0; }
         body::before {
             content: ''; position: fixed; width: 150vmax; height: 150vmax; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             background: radial-gradient(circle, #3b82f6 0%, transparent 30%), radial-gradient(circle, #ec4899 0%, transparent 30%), radial-gradient(circle, #8b5cf6 0%, transparent 30%);
             background-blend-mode: screen; filter: blur(100px); opacity: 0.3; animation: aurora 25s linear infinite; z-index: -1;
         }
-        .modern-panel { background: rgba(12, 12, 30, 0.5); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid #22253b; border-radius: 1.5rem; }
+        .modern-panel { background: rgba(12, 12, 30, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid #22253b; border-radius: 1.5rem; }
         .pokemon-card { transition: all 0.2s ease-in-out; cursor: pointer; border: 2px solid transparent; border-radius: 1rem; }
         .pokemon-card.selected { transform: translateY(-4px); border-color: #38bdf8; box-shadow: 0 0 20px rgba(56, 189, 248, 0.7); }
         .pokemon-card.disabled { filter: grayscale(100%) opacity(0.4); pointer-events: none; }
@@ -33,9 +33,11 @@
         .secondary-button { background-color: rgba(30, 41, 59, 0.5); border: 1px solid #334155; transition: all 0.2s; }
         .secondary-button:hover { background-color: rgba(51, 65, 85, 0.7); border-color: #475569; }
         .team-slot.picking { transform: scale(1.03); box-shadow: 0 0 20px, 0 0 10px inset; border-color: #facc15; }
-        #pokemon-grid::-webkit-scrollbar { width: 8px; }
-        #pokemon-grid::-webkit-scrollbar-track { background: transparent; }
-        #pokemon-grid::-webkit-scrollbar-thumb { background-color: #38bdf8; border-radius: 20px; border: 2px solid transparent; background-clip: content-box;}
+        #pokemon-grid::-webkit-scrollbar, .modal-content::-webkit-scrollbar { width: 8px; }
+        #pokemon-grid::-webkit-scrollbar-track, .modal-content::-webkit-scrollbar-track { background: transparent; }
+        #pokemon-grid::-webkit-scrollbar-thumb, .modal-content::-webkit-scrollbar-thumb { background-color: #38bdf8; border-radius: 20px; border: 2px solid transparent; background-clip: content-box;}
+        @keyframes phase-anim { 0%, 100% { opacity: 0; transform: scale(0.8) translateY(20px); } 10%, 90% { opacity: 1; transform: scale(1) translateY(0); } }
+        .phase-overlay { animation: phase-anim 3s ease-in-out forwards; text-shadow: 0 0 15px rgba(255,255,255,0.8); }
     </style>
 </head>
 <body class="p-2 sm:p-4">
@@ -45,7 +47,7 @@
     </div>
     
     <template id="lobby-template">
-        <div class="flex flex-col h-screen justify-center items-center gap-6">
+       <div class="flex flex-col h-screen justify-center items-center gap-6">
             <header class="text-center shrink-0">
                 <h1 class="text-4xl sm:text-5xl font-extrabold main-title">SIMULADOR DE DRAFTEO ONLINE</h1>
                 <p class="text-slate-300 font-semibold">Creado por: <span class="font-bold text-cyan-400">antuan</span></p>
@@ -73,13 +75,17 @@
     </template>
 
     <template id="draft-template">
-        <div class="flex flex-col min-h-screen">
+        <div class="flex flex-col h-screen">
              <div id="top-bar" class="flex flex-col md:flex-row justify-between items-center mb-4 px-4 shrink-0">
-                <div id="purple-bans-container" class="w-full md:w-1/3 flex justify-center md:justify-start items-center gap-2 order-2 md:order-1 my-2 md:my-0"></div>
+                <div class="w-full md:w-1/3 flex justify-center md:justify-start items-center gap-2 order-2 md:order-1 my-2 md:my-0">
+                    <div id="purple-bans" class="flex justify-center gap-2"></div>
+                </div>
                 <div id="timer-container" class="modern-panel py-2 px-6 flex items-center gap-4 order-1 md:order-2">
                     <div id="timer" class="text-5xl font-bold text-white">--</div>
                 </div>
-                <div id="orange-bans-container" class="w-full md:w-1/3 flex justify-center md:justify-end items-center gap-2 order-3"></div>
+                <div class="w-full md:w-1/3 flex justify-center md:justify-end items-center gap-2 order-3">
+                    <div id="orange-bans" class="flex justify-center gap-2"></div>
+                </div>
             </div>
             <div class="flex-grow flex flex-col lg:flex-row gap-4 min-h-0">
                 <aside class="w-full lg:w-1/4 p-4 modern-panel flex flex-col">
@@ -88,7 +94,7 @@
                 </aside>
                 <section class="flex-grow flex flex-col min-h-0">
                     <div id="draft-status" class="w-full text-center p-3 mb-4 rounded-lg font-extrabold text-xl sm:text-2xl modern-panel shrink-0"></div>
-                    <div id="pokemon-grid" class="flex-grow p-3 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 modern-panel overflow-y-auto" style="max-height: 50vh;"></div>
+                    <div id="pokemon-grid" class="flex-grow p-3 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 modern-panel overflow-y-auto" style="height: 50vh;"></div>
                     <button id="confirm-button" class="w-full max-w-xs mx-auto styled-button font-bold py-3 px-4 text-lg rounded-xl mt-4 hidden">CONFIRMAR</button>
                 </section>
                 <aside class="w-full lg:w-1/4 p-4 modern-panel flex flex-col">
@@ -102,8 +108,29 @@
         </div>
     </template>
     
+    <div id="phase-overlay-container" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
+        <h2 id="phase-text" class="text-6xl font-extrabold text-white text-center"></h2>
+    </div>
+
     <script type="module">
-        const { db, auth, doc, onSnapshot, setDoc, getDoc, updateDoc, signInAnonymously, onAuthStateChanged, serverTimestamp, deleteDoc } = window.app;
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, getDoc, updateDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIGURACIÓN DE FIREBASE (INTEGRADA) ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyBVBM0lEVF7oJwaIUYoEY2vc5eLXMPkw3I",
+          authDomain: "simulador-unite.firebaseapp.com",
+          projectId: "simulador-unite",
+          storageBucket: "simulador-unite.firebasestorage.app",
+          messagingSenderId: "562805600014",
+          appId: "1:562805600014:web:ae9ad79882a5afb477b15f",
+          measurementId: "G-YMCV11HQH0"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
         let localPlayer = {};
         let currentUnsubscribe;
@@ -115,7 +142,7 @@
             { id: "venusaur", name: "Venusaur", role: "Attacker"}, { id: "charizard", name: "Charizard", role: "All-Rounder"}, { id: "blastoise", name: "Blastoise", role: "Defender"}, { id: "pikachu", name: "Pikachu", role: "Attacker"}, { id: "clefable", name: "Clefable", role: "Supporter"}, { id: "alolan-ninetales", name: "A. Ninetales", role: "Attacker"}, { id: "wigglytuff", name: "Wigglytuff", role: "Supporter"}, { id: "machamp", name: "Machamp", role: "All-Rounder"}, { id: "slowbro", name: "Slowbro", role: "Defender"}, { id: "gengar", name: "Gengar", role: "Speedster"}, { id: "mr-mime", name: "Mr. Mime", role: "Supporter"}, { id: "gyarados", name: "Gyarados", role: "All-Rounder"}, { id: "snorlax", name: "Snorlax", role: "Defender"}, { id: "dragonite", name: "Dragonite", role: "All-Rounder"}, { id: "mewtwo-x", name: "Mewtwo X", role: "All-Rounder"}, { id: "mewtwo-y", name: "Mewtwo Y", role: "Attacker"}, { id: "mew", name: "Mew", role: "Attacker"}, { id: "azumarill", name: "Azumarill", role: "All-Rounder"}, { id: "espeon", name: "Espeon", role: "Attacker"}, { id: "umbreon", name: "Umbreon", role: "Defender"}, { id: "scizor", name: "Scizor", role: "All-Rounder"}, { id: "blissey", name: "Blissey", role: "Supporter"}, { id: "tyranitar", name: "Tyranitar", role: "All-Rounder"}, { id: "gardevoir", name: "Gardevoir", role: "Attacker"}, { id: "sableye", name: "Sableye", role: "Supporter"}, { id: "absol", name: "Absol", role: "Speedster"}, { id: "metagross", name: "Metagross", role: "All-Rounder"}, { id: "garchomp", name: "Garchomp", role: "All-Rounder"}, { id: "lucario", name: "Lucario", role: "All-Rounder"}, { id: "leafeon", name: "Leafeon", role: "Speedster"}, { id: "glaceon", name: "Glaceon", role: "Attacker"}, { id: "crustle", name: "Crustle", role: "Defender"}, { id: "greninja", name: "Greninja", role: "Attacker"}, { id: "talonflame", name: "Talonflame", role: "Speedster"}, { id: "aegislash", name: "Aegislash", role: "All-Rounder"}, { id: "sylveon", name: "Sylveon", role: "Attacker"}, { id: "goodra", name: "Goodra", role: "Defender"}, { id: "trevenant", name: "Trevenant", role: "Defender"}, { id: "hoopa", name: "Hoopa", role: "Supporter"}, { id: "decidueye", name: "Decidueye", role: "Attacker"}, { id: "tsareena", name: "Tsareena", role: "All-Rounder"}, { id: "comfey", name: "Comfey", role: "Supporter"}, { id: "cinderace", name: "Cinderace", role: "Attacker"}, { id: "inteleon", name: "Inteleon", role: "Attacker"}, { id: "eldegoss", name: "Eldegoss", role: "Supporter"}, { id: "cramorant", name: "Cramorant", role: "Attacker"}, { id: "duraludon", name: "Duraludon", role: "Attacker"}, { id: "zeraora", name: "Zeraora", role: "Speedster"}, { id: "lapras", name: "Lapras", role: "Defender"}, { id: "chandelure", name: "Chandelure", role: "Attacker"}, { id: "dodrio", name: "Dodrio", role: "Speedster"}, { id: "buzzwole", name: "Buzzwole", role: "All-Rounder"}, { id: "zacian", name: "Zacian", role: "All-Rounder"}, { id: "urshifu", name: "Urshifu", role: "All-Rounder"}, { id: "dragapult", name: "Dragapult", role: "Attacker"}, { id: "mamoswine", name: "Mamoswine", role: "Defender"}, { id: "delphox", name: "Delphox", role: "Attacker"}, { id: "zoroark", name: "Zoroark", role: "Speedster"}, { id: "mimikyu", name: "Mimikyu", role: "All-Rounder"}, { id: "falinks", name: "Falinks", role: "All-Rounder"}, { id: "blaziken", name: "Blaziken", role: "All-Rounder"}, { id: "meowscarada", name: "Meowscarada", role: "Speedster"}, { id: "miraidon", name: "Miraidon", role: "Attacker"}, { id: "ceruledge", name: "Ceruledge", role: "All-Rounder"}, { id: "armarouge", name: "Armarouge", role: "Attacker"}, { id: "alcremie", name: "Alcremie", role: "Supporter"}, { id: "ho-oh", name: "Ho-Oh", role: "Defender"}, { id: "alolan-raichu", name: "A. Raichu", role: "Attacker"}, { id: "darkrai", name: "Darkrai", role: "Speedster"}, { id: "greedent", name: "Greedent", role: "Defender"}, { id: "suicune", name: "Suicune", role: "All-Rounder"}, { id: "tinkaton", name: "Tinkaton", role: "All-Rounder"}
             ].sort((a, b) => a.name.localeCompare(b.name));
         
-        const initialGameState = { phase: 'WAITING', turn: 'PURPLE', purpleBans: [], orangeBans: [], purplePicks: [], orangePicks: [], pickOrderIndex: 0, banOrderIndex: 0, selectedPokemon: {PURPLE: null, ORANGE: null}, players: {}, timerStart: null };
+        const initialGameState = { phase: 'WAITING', turn: 'PURPLE', purpleBans: [], orangeBans: [], purplePicks: [], orangePicks: [], pickOrderIndex: 0, banOrderIndex: 0, selectedPokemon: {}, players: {} };
         const pickOrder = [ { team: 'PURPLE', count: 1 }, { team: 'ORANGE', count: 2 }, { team: 'PURPLE', count: 2 }, { team: 'ORANGE', count: 2 }, { team: 'PURPLE', count: 2 }, { team: 'ORANGE', count: 1 } ];
         const banOrder = [ { team: 'PURPLE', count: 1 }, { team: 'ORANGE', count: 1 }, { team: 'PURPLE', count: 1 }, { team: 'ORANGE', count: 1 } ];
 
@@ -127,9 +154,10 @@
             document.getElementById('create-game-button').addEventListener('click', showTeamSelection);
             document.getElementById('join-game-button').addEventListener('click', joinGame);
         }
-
+        
         function showTeamSelection() {
-            if (!document.getElementById('username-input').value.trim()) { alert("Por favor, ingresa un nombre de usuario."); return; }
+            const usernameInput = document.getElementById('username-input');
+            if (!usernameInput.value.trim()) { alert("Por favor, ingresa un nombre de usuario."); return; }
             document.getElementById('lobby-buttons').classList.add('hidden');
             const teamSelection = document.getElementById('team-selection');
             teamSelection.classList.remove('hidden');
@@ -189,21 +217,18 @@
             });
             startGame(gameId, localPlayer);
         }
-
+        
         function startGame(gameId, playerInfo) {
             localPlayer = playerInfo;
-            appContainer.innerHTML = '';
-            const draftTemplate = document.getElementById('draft-template');
-            appContainer.appendChild(draftTemplate.content.cloneNode(true));
+            appContainer.innerHTML = document.getElementById('draft-template').content.cloneNode(true);
 
             if(currentUnsubscribe) currentUnsubscribe();
             currentUnsubscribe = onSnapshot(doc(db, "games", gameId), (doc) => {
                 if(doc.exists()){
                     gameState = doc.data();
-                    if (gameState.phase === 'WAITING' && Object.keys(gameState.players).length === 1) {
-                         // Waiting for opponent, show waiting message
-                         const statusDisplay = document.getElementById('draft-status');
-                         if(statusDisplay) statusDisplay.textContent = 'Esperando oponente...';
+                    if(gameState.phase === 'WAITING' && Object.keys(gameState.players).length < 2) {
+                        const statusDisplay = document.getElementById('draft-status');
+                        if (statusDisplay) statusDisplay.textContent = 'Esperando oponente...';
                     } else {
                          updateUI();
                     }
@@ -215,8 +240,44 @@
         }
         
         function updateUI() {
-            /* All UI rendering logic goes here */
+            // Re-bind DOM elements inside draft container
+            const draftDom = {
+                pokemonGrid: document.getElementById('pokemon-grid'),
+                purpleTeamContainer: document.getElementById('purple-team'),
+                orangeTeamContainer: document.getElementById('orange-team'),
+                purpleBansContainer: document.getElementById('purple-bans'),
+                orangeBansContainer: document.getElementById('orange-bans'),
+                statusDisplay: document.getElementById('draft-status'),
+                confirmButton: document.getElementById('confirm-button'),
+                timer: document.getElementById('timer'),
+                purplePlayerName: document.getElementById('purple-player-name'),
+                orangePlayerName: document.getElementById('orange-player-name'),
+                exitButton: document.getElementById('exit-button'),
+            };
+
+            if(!draftDom.pokemonGrid) return; // Exit if draft UI not rendered yet
+
+            renderTeamSlots(draftDom);
+            renderBanSlots(draftDom);
+            updateStatus(draftDom);
+
+            // Add event listeners
+            document.getElementById('reset-button')?.addEventListener('click', () => { /* Logic to exit/reset */ });
+            document.getElementById('confirm-button')?.addEventListener('click', confirmSelection);
+            document.querySelectorAll('.role-filter-btn').forEach(button => {
+                button.onclick = () => {
+                    document.querySelectorAll('.role-filter-btn').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    renderPokemonGrid(draftDom);
+                }
+            });
+            document.querySelector('.role-filter-btn[data-role="All"]').classList.add('active');
+
+            renderPokemonGrid(draftDom);
         }
+
+        // The rest of your functions (renderPokemonGrid, renderTeamSlots, etc.) go here
+        // Make sure they accept the `dom` object as an argument
         
         onAuthStateChanged(auth, (user) => {
             if (!user) signInAnonymously(auth);
