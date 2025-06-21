@@ -64,8 +64,8 @@
                     <input type="text" id="username-input" class="w-full bg-slate-800 text-white p-3 rounded-lg text-center" placeholder="Tu nombre...">
                 </div>
                 <div id="lobby-buttons" class="flex flex-col sm:flex-row gap-4 mt-4">
-                     <button id="create-game-button" class="w-full styled-button text-white font-bold py-4 px-8 rounded-2xl text-xl">Crear Partida</button>
-                     <button id="join-game-button" class="w-full secondary-button text-white font-bold py-4 px-8 rounded-2xl text-xl">Unirse a Partida</button>
+                      <button id="create-game-button" class="w-full styled-button text-white font-bold py-4 px-8 rounded-2xl text-xl">Crear Partida</button>
+                      <button id="join-game-button" class="w-full secondary-button text-white font-bold py-4 px-8 rounded-2xl text-xl">Unirse a Partida</button>
                 </div>
             </div>
 
@@ -161,12 +161,12 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // --- DATOS DE POKÉMON (IDs CORREGIDOS) ---
+        // --- DATOS DE POKÉMON (IDs Y URLS CORREGIDOS) ---
         const pokemonData = [
             { id: 'venusaur', name: 'Venusaur', role: 'Attacker' }, { id: 'charizard', name: 'Charizard', role: 'All-Rounder' }, { id: 'blastoise', name: 'Blastoise', role: 'Defender' },
             { id: 'pikachu', name: 'Pikachu', role: 'Attacker' }, { id: 'clefable', name: 'Clefable', role: 'Supporter' }, { id: 'ninetales-alolan', name: 'A. Ninetales', role: 'Attacker' },
             { id: 'wigglytuff', name: 'Wigglytuff', role: 'Supporter' }, { id: 'machamp', name: 'Machamp', role: 'All-Rounder' }, { id: 'slowbro', name: 'Slowbro', role: 'Defender' },
-            { id: 'gengar', name: 'Gengar', role: 'Speedster' }, { id: 'mr-mime', name: 'Mr. Mime', role: 'Supporter' }, { id: 'snorlax', name: 'Snorlax', role: 'Defender' },
+            { id: 'gengar', name: 'Gengar', role: 'Speedster' }, { id: 'mr.mime', name: 'Mr. Mime', role: 'Supporter' }, { id: 'snorlax', name: 'Snorlax', role: 'Defender' },
             { id: 'gardevoir', name: 'Gardevoir', role: 'Attacker' }, { id: 'absol', name: 'Absol', role: 'Speedster' }, { id: 'garchomp', name: 'Garchomp', role: 'All-Rounder' },
             { id: 'lucario', name: 'Lucario', role: 'All-Rounder' }, { id: 'crustle', name: 'Crustle', role: 'Defender' }, { id: 'greninja', name: 'Greninja', role: 'Attacker' },
             { id: 'talonflame', name: 'Talonflame', role: 'Speedster' }, { id: 'zeraora', name: 'Zeraora', role: 'Speedster' }, { id: 'cinderace', name: 'Cinderace', role: 'Attacker' },
@@ -559,8 +559,8 @@
             card.dataset.pokemonId = pokemon.id;
             
             const img = document.createElement('img');
-            // URL corregida para mayor estabilidad
-            img.src = `https://unite-db.com/images/pokemon/${pokemon.id}.png`;
+            // URL cambiada a una API para mayor estabilidad
+            img.src = `https://unite-api.dev/images/pokemon/${pokemon.id}.png`;
             img.alt = pokemon.name;
             img.className = 'w-16 h-16 object-contain';
             img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=${pokemon.name.substring(0,2)}`; };
@@ -581,8 +581,8 @@
             if (pokemonId) {
                 const pokemon = pokemonData.find(p => p.id === pokemonId);
                 const img = document.createElement('img');
-                // URL corregida para mayor estabilidad
-                img.src = `https://unite-db.com/images/pokemon/${pokemonId}.png`;
+                // URL cambiada a una API para mayor estabilidad
+                img.src = `https://unite-api.dev/images/pokemon/${pokemonId}.png`;
                 img.alt = pokemon?.name || pokemonId;
                 img.className = isBan ? 'w-10 h-10' : 'w-16 h-16';
                 img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=${pokemonId.substring(0,2)}`; };
@@ -617,7 +617,7 @@
                     const pokemon = pokemonData.find(p => p.id === pick);
                     if (pokemon) {
                         const img = document.createElement('img');
-                        img.src = `https://unite-db.com/images/pokemon/${pokemon.id}.png`;
+                        img.src = `https://unite-api.dev/images/pokemon/${pokemon.id}.png`;
                         img.alt = pokemon.name;
                         img.className = 'w-12 h-12';
                         mobileSlot.appendChild(img);
