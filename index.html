@@ -8,28 +8,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc, getDoc, updateDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- CONFIGURACIÓN DE FIREBASE (INTEGRADA) ---
-        const firebaseConfig = {
-          apiKey: "AIzaSyBVBM0lEVF7oJwaIUYoEY2vc5eLXMPkw3I",
-          authDomain: "simulador-unite.firebaseapp.com",
-          projectId: "simulador-unite",
-          storageBucket: "simulador-unite.firebasestorage.app",
-          messagingSenderId: "562805600014",
-          appId: "1:562805600014:web:ae9ad79882a5afb477b15f",
-          measurementId: "G-YMCV11HQH0"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        window.app = { db, auth, doc, onSnapshot, setDoc, getDoc, updateDoc, signInAnonymously, onAuthStateChanged, serverTimestamp, deleteDoc };
-    </script>
     <style>
         @keyframes aurora { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
         body { font-family: 'Exo 2', sans-serif; background-color: #0C0C1E; color: #e0e0e0; position: relative; }
@@ -55,18 +33,23 @@
         .secondary-button { background-color: rgba(30, 41, 59, 0.5); border: 1px solid #334155; transition: all 0.2s; }
         .secondary-button:hover { background-color: rgba(51, 65, 85, 0.7); border-color: #475569; }
         .team-slot.picking { transform: scale(1.03); box-shadow: 0 0 20px, 0 0 10px inset; border-color: #facc15; }
+        #pokemon-grid::-webkit-scrollbar { width: 8px; }
+        #pokemon-grid::-webkit-scrollbar-track { background: transparent; }
+        #pokemon-grid::-webkit-scrollbar-thumb { background-color: #38bdf8; border-radius: 20px; border: 2px solid transparent; background-clip: content-box;}
     </style>
 </head>
 <body class="p-2 sm:p-4">
 
-    <div id="draft-simulator" class="main-content w-full max-w-screen-xl mx-auto flex flex-col min-h-screen">
-        
-        <header class="text-center mb-4 shrink-0">
-            <h1 class="text-4xl sm:text-5xl font-extrabold main-title">SIMULADOR DE DRAFTEO ONLINE</h1>
-            <p class="text-slate-300 font-semibold">Creado por: <span class="font-bold text-cyan-400">antuan</span></p>
-        </header>
-
-        <div id="lobby-screen" class="flex-grow flex flex-col justify-center items-center gap-6">
+    <div id="app-container" class="w-full max-w-screen-xl mx-auto flex flex-col min-h-screen relative z-10">
+        <!-- El contenido se renderizará aquí -->
+    </div>
+    
+    <template id="lobby-template">
+        <div class="flex flex-col h-screen justify-center items-center gap-6">
+            <header class="text-center shrink-0">
+                <h1 class="text-4xl sm:text-5xl font-extrabold main-title">SIMULADOR DE DRAFTEO ONLINE</h1>
+                <p class="text-slate-300 font-semibold">Creado por: <span class="font-bold text-cyan-400">antuan</span></p>
+            </header>
             <div class="modern-panel p-8 rounded-2xl text-center w-full max-w-md">
                 <h2 class="text-2xl font-bold mb-4">Ingresa tu nombre de usuario</h2>
                 <input type="text" id="username-input" class="w-full bg-slate-800 text-white p-3 rounded-lg text-center" placeholder="Tu nombre...">
@@ -87,14 +70,36 @@
                 <p id="game-code-display" class="text-2xl font-bold text-yellow-300 mt-2 cursor-pointer" title="Copiar código"></p>
             </div>
         </div>
-        
-        <div id="draft-container" class="hidden flex-grow flex-col min-h-0">
-            <!-- El contenido del draft se generará aquí -->
-        </div>
-    </div>
-    
+    </template>
+
     <template id="draft-template">
-        <!-- El contenido de la interfaz de drafteo se insertará aquí -->
+        <div class="flex flex-col min-h-screen">
+             <div id="top-bar" class="flex flex-col md:flex-row justify-between items-center mb-4 px-4 shrink-0">
+                <div id="purple-bans-container" class="w-full md:w-1/3 flex justify-center md:justify-start items-center gap-2 order-2 md:order-1 my-2 md:my-0"></div>
+                <div id="timer-container" class="modern-panel py-2 px-6 flex items-center gap-4 order-1 md:order-2">
+                    <div id="timer" class="text-5xl font-bold text-white">--</div>
+                </div>
+                <div id="orange-bans-container" class="w-full md:w-1/3 flex justify-center md:justify-end items-center gap-2 order-3"></div>
+            </div>
+            <div class="flex-grow flex flex-col lg:flex-row gap-4 min-h-0">
+                <aside class="w-full lg:w-1/4 p-4 modern-panel flex flex-col">
+                    <h2 id="purple-player-name" class="text-2xl font-bold text-center mb-4 text-purple-400"></h2>
+                    <div id="purple-team" class="space-y-3 flex-grow"></div>
+                </aside>
+                <section class="flex-grow flex flex-col min-h-0">
+                    <div id="draft-status" class="w-full text-center p-3 mb-4 rounded-lg font-extrabold text-xl sm:text-2xl modern-panel shrink-0"></div>
+                    <div id="pokemon-grid" class="flex-grow p-3 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 modern-panel overflow-y-auto" style="max-height: 50vh;"></div>
+                    <button id="confirm-button" class="w-full max-w-xs mx-auto styled-button font-bold py-3 px-4 text-lg rounded-xl mt-4 hidden">CONFIRMAR</button>
+                </section>
+                <aside class="w-full lg:w-1/4 p-4 modern-panel flex flex-col">
+                    <h2 id="orange-player-name" class="text-2xl font-bold text-center mb-4 text-orange-400"></h2>
+                    <div id="orange-team" class="space-y-3 flex-grow"></div>
+                </aside>
+            </div>
+             <div class="mt-4 flex flex-col sm:flex-row gap-4 shrink-0">
+                <button id="exit-button" class="w-full secondary-button font-bold py-3 px-4 rounded-lg">SALIR DE LA PARTIDA</button>
+            </div>
+        </div>
     </template>
     
     <script type="module">
@@ -102,34 +107,40 @@
 
         let localPlayer = {};
         let currentUnsubscribe;
+        let timerInterval;
+        let gameState = {};
+        const appContainer = document.getElementById('app-container');
 
-        const dom = {
-            lobbyScreen: document.getElementById('lobby-screen'),
-            draftContainer: document.getElementById('draft-container'),
-            createGameButton: document.getElementById('create-game-button'),
-            joinGameButton: document.getElementById('join-game-button'),
-            usernameInput: document.getElementById('username-input'),
-            teamSelection: document.getElementById('team-selection'),
-            choosePurple: document.getElementById('choose-purple'),
-            chooseOrange: document.getElementById('choose-orange'),
-            waitingRoom: document.getElementById('waiting-room'),
-            gameCodeDisplay: document.getElementById('game-code-display'),
-            lobbyButtons: document.getElementById('lobby-buttons'),
-        };
+        const pokemonData = [
+            { id: "venusaur", name: "Venusaur", role: "Attacker"}, { id: "charizard", name: "Charizard", role: "All-Rounder"}, { id: "blastoise", name: "Blastoise", role: "Defender"}, { id: "pikachu", name: "Pikachu", role: "Attacker"}, { id: "clefable", name: "Clefable", role: "Supporter"}, { id: "alolan-ninetales", name: "A. Ninetales", role: "Attacker"}, { id: "wigglytuff", name: "Wigglytuff", role: "Supporter"}, { id: "machamp", name: "Machamp", role: "All-Rounder"}, { id: "slowbro", name: "Slowbro", role: "Defender"}, { id: "gengar", name: "Gengar", role: "Speedster"}, { id: "mr-mime", name: "Mr. Mime", role: "Supporter"}, { id: "gyarados", name: "Gyarados", role: "All-Rounder"}, { id: "snorlax", name: "Snorlax", role: "Defender"}, { id: "dragonite", name: "Dragonite", role: "All-Rounder"}, { id: "mewtwo-x", name: "Mewtwo X", role: "All-Rounder"}, { id: "mewtwo-y", name: "Mewtwo Y", role: "Attacker"}, { id: "mew", name: "Mew", role: "Attacker"}, { id: "azumarill", name: "Azumarill", role: "All-Rounder"}, { id: "espeon", name: "Espeon", role: "Attacker"}, { id: "umbreon", name: "Umbreon", role: "Defender"}, { id: "scizor", name: "Scizor", role: "All-Rounder"}, { id: "blissey", name: "Blissey", role: "Supporter"}, { id: "tyranitar", name: "Tyranitar", role: "All-Rounder"}, { id: "gardevoir", name: "Gardevoir", role: "Attacker"}, { id: "sableye", name: "Sableye", role: "Supporter"}, { id: "absol", name: "Absol", role: "Speedster"}, { id: "metagross", name: "Metagross", role: "All-Rounder"}, { id: "garchomp", name: "Garchomp", role: "All-Rounder"}, { id: "lucario", name: "Lucario", role: "All-Rounder"}, { id: "leafeon", name: "Leafeon", role: "Speedster"}, { id: "glaceon", name: "Glaceon", role: "Attacker"}, { id: "crustle", name: "Crustle", role: "Defender"}, { id: "greninja", name: "Greninja", role: "Attacker"}, { id: "talonflame", name: "Talonflame", role: "Speedster"}, { id: "aegislash", name: "Aegislash", role: "All-Rounder"}, { id: "sylveon", name: "Sylveon", role: "Attacker"}, { id: "goodra", name: "Goodra", role: "Defender"}, { id: "trevenant", name: "Trevenant", role: "Defender"}, { id: "hoopa", name: "Hoopa", role: "Supporter"}, { id: "decidueye", name: "Decidueye", role: "Attacker"}, { id: "tsareena", name: "Tsareena", role: "All-Rounder"}, { id: "comfey", name: "Comfey", role: "Supporter"}, { id: "cinderace", name: "Cinderace", role: "Attacker"}, { id: "inteleon", name: "Inteleon", role: "Attacker"}, { id: "eldegoss", name: "Eldegoss", role: "Supporter"}, { id: "cramorant", name: "Cramorant", role: "Attacker"}, { id: "duraludon", name: "Duraludon", role: "Attacker"}, { id: "zeraora", name: "Zeraora", role: "Speedster"}, { id: "lapras", name: "Lapras", role: "Defender"}, { id: "chandelure", name: "Chandelure", role: "Attacker"}, { id: "dodrio", name: "Dodrio", role: "Speedster"}, { id: "buzzwole", name: "Buzzwole", role: "All-Rounder"}, { id: "zacian", name: "Zacian", role: "All-Rounder"}, { id: "urshifu", name: "Urshifu", role: "All-Rounder"}, { id: "dragapult", name: "Dragapult", role: "Attacker"}, { id: "mamoswine", name: "Mamoswine", role: "Defender"}, { id: "delphox", name: "Delphox", role: "Attacker"}, { id: "zoroark", name: "Zoroark", role: "Speedster"}, { id: "mimikyu", name: "Mimikyu", role: "All-Rounder"}, { id: "falinks", name: "Falinks", role: "All-Rounder"}, { id: "blaziken", name: "Blaziken", role: "All-Rounder"}, { id: "meowscarada", name: "Meowscarada", role: "Speedster"}, { id: "miraidon", name: "Miraidon", role: "Attacker"}, { id: "ceruledge", name: "Ceruledge", role: "All-Rounder"}, { id: "armarouge", name: "Armarouge", role: "Attacker"}, { id: "alcremie", name: "Alcremie", role: "Supporter"}, { id: "ho-oh", name: "Ho-Oh", role: "Defender"}, { id: "alolan-raichu", name: "A. Raichu", role: "Attacker"}, { id: "darkrai", name: "Darkrai", role: "Speedster"}, { id: "greedent", name: "Greedent", role: "Defender"}, { id: "suicune", name: "Suicune", role: "All-Rounder"}, { id: "tinkaton", name: "Tinkaton", role: "All-Rounder"}
+            ].sort((a, b) => a.name.localeCompare(b.name));
         
-        const initialGameState = { phase: 'WAITING', turn: 'PURPLE', purpleBans: [], orangeBans: [], purplePicks: [], orangePicks: [], pickOrderIndex: 0, banOrderIndex: 0, selectedPokemon: {}, players: {} };
+        const initialGameState = { phase: 'WAITING', turn: 'PURPLE', purpleBans: [], orangeBans: [], purplePicks: [], orangePicks: [], pickOrderIndex: 0, banOrderIndex: 0, selectedPokemon: {PURPLE: null, ORANGE: null}, players: {}, timerStart: null };
+        const pickOrder = [ { team: 'PURPLE', count: 1 }, { team: 'ORANGE', count: 2 }, { team: 'PURPLE', count: 2 }, { team: 'ORANGE', count: 2 }, { team: 'PURPLE', count: 2 }, { team: 'ORANGE', count: 1 } ];
+        const banOrder = [ { team: 'PURPLE', count: 1 }, { team: 'ORANGE', count: 1 }, { team: 'PURPLE', count: 1 }, { team: 'ORANGE', count: 1 } ];
+
+        function showLobby() {
+            if (currentUnsubscribe) currentUnsubscribe();
+            appContainer.innerHTML = '';
+            const lobbyTemplate = document.getElementById('lobby-template');
+            appContainer.appendChild(lobbyTemplate.content.cloneNode(true));
+            document.getElementById('create-game-button').addEventListener('click', showTeamSelection);
+            document.getElementById('join-game-button').addEventListener('click', joinGame);
+        }
 
         function showTeamSelection() {
-            const username = dom.usernameInput.value.trim();
-            if (!username) { alert("Por favor, ingresa un nombre de usuario."); return; }
-            dom.lobbyButtons.classList.add('hidden');
-            dom.teamSelection.classList.remove('hidden');
-            dom.teamSelection.classList.add('flex');
+            if (!document.getElementById('username-input').value.trim()) { alert("Por favor, ingresa un nombre de usuario."); return; }
+            document.getElementById('lobby-buttons').classList.add('hidden');
+            const teamSelection = document.getElementById('team-selection');
+            teamSelection.classList.remove('hidden');
+            teamSelection.classList.add('flex');
+            document.getElementById('choose-purple').onclick = () => createGame('PURPLE');
+            document.getElementById('choose-orange').onclick = () => createGame('ORANGE');
         }
 
         async function createGame(chosenTeam) {
-            const username = dom.usernameInput.value.trim();
-            await (auth.currentUser ? Promise.resolve() : signInAnonymously(auth));
+            const username = document.getElementById('username-input').value.trim();
+            await (auth.currentUser || signInAnonymously(auth));
             
             const gameId = Math.random().toString(36).substring(2, 8).toUpperCase();
             const gameRef = doc(db, "games", gameId);
@@ -139,21 +150,24 @@
             
             await setDoc(gameRef, initialData);
 
-            dom.teamSelection.classList.add('hidden');
-            dom.waitingRoom.classList.remove('hidden');
-            dom.gameCodeDisplay.textContent = gameId;
-
+            document.getElementById('team-selection').classList.add('hidden');
+            const waitingRoom = document.getElementById('waiting-room');
+            waitingRoom.classList.remove('hidden');
+            const codeDisplay = document.getElementById('game-code-display');
+            codeDisplay.textContent = gameId;
+            codeDisplay.onclick = () => navigator.clipboard.writeText(gameId).then(() => alert('Código copiado.'));
+            
             startGame(gameId, localPlayer);
         }
 
         async function joinGame() {
-            const username = dom.usernameInput.value.trim();
+            const username = document.getElementById('username-input').value.trim();
             if (!username) { alert("Por favor, ingresa un nombre de usuario."); return; }
             
             const gameId = prompt("Ingresa el ID de la partida:");
             if (!gameId) return;
 
-            await (auth.currentUser ? Promise.resolve() : signInAnonymously(auth));
+            await (auth.currentUser || signInAnonymously(auth));
             const userId = auth.currentUser.uid;
             
             const gameRef = doc(db, "games", gameId);
@@ -178,46 +192,37 @@
 
         function startGame(gameId, playerInfo) {
             localPlayer = playerInfo;
-            dom.lobbyScreen.classList.add('hidden');
-            dom.draftContainer.innerHTML = document.getElementById('draft-template').innerHTML; // This line needs to be corrected
-            dom.draftContainer.classList.remove('hidden');
+            appContainer.innerHTML = '';
+            const draftTemplate = document.getElementById('draft-template');
+            appContainer.appendChild(draftTemplate.content.cloneNode(true));
 
             if(currentUnsubscribe) currentUnsubscribe();
             currentUnsubscribe = onSnapshot(doc(db, "games", gameId), (doc) => {
                 if(doc.exists()){
-                    const gameState = doc.data();
-                    // updateUI(gameState);
+                    gameState = doc.data();
+                    if (gameState.phase === 'WAITING' && Object.keys(gameState.players).length === 1) {
+                         // Waiting for opponent, show waiting message
+                         const statusDisplay = document.getElementById('draft-status');
+                         if(statusDisplay) statusDisplay.textContent = 'Esperando oponente...';
+                    } else {
+                         updateUI();
+                    }
                 } else {
-                    alert("La partida ha terminado o fue cancelada.");
-                    initializeLobby();
+                    alert("La partida ha terminado o fue cancelada por el anfitrión.");
+                    showLobby();
                 }
             });
         }
         
-        function initializeLobby() {
-            if (currentUnsubscribe) currentUnsubscribe();
-            dom.lobbyScreen.classList.remove('hidden');
-            dom.draftContainer.classList.add('hidden');
-            dom.lobbyButtons.classList.remove('hidden');
-            dom.teamSelection.classList.add('hidden');
-            dom.waitingRoom.classList.add('hidden');
+        function updateUI() {
+            /* All UI rendering logic goes here */
         }
-
-        dom.createGameButton.addEventListener('click', showTeamSelection);
-        dom.joinGameButton.addEventListener('click', joinGame);
-        dom.choosePurple.addEventListener('click', () => createGame('PURPLE'));
-        dom.chooseOrange.addEventListener('click', () => createGame('ORANGE'));
-        dom.gameCodeDisplay.addEventListener('click', () => {
-            navigator.clipboard.writeText(dom.gameCodeDisplay.textContent).then(() => alert('Código copiado al portapapeles.'));
-        });
         
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                console.log("Authenticated anonymously:", user.uid);
-            }
+            if (!user) signInAnonymously(auth);
         });
 
-        initializeLobby();
+        showLobby();
     </script>
 </body>
 </html>
