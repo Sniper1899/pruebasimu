@@ -31,7 +31,7 @@
         .styled-button:hover:not(:disabled) { background-position: right center; }
         .styled-button:disabled { background-image: none; background-color: #374151; cursor: not-allowed; }
         .secondary-button { background-color: rgba(30, 41, 59, 0.5); border: 1px solid #334155; transition: all 0.2s; }
-        .secondary-button:hover { background-color: rgba(51, 65, 85, 0.7); border-color: #475569; }
+        .secondary-button:hover:not(:disabled) { background-color: rgba(51, 65, 85, 0.7); border-color: #475569; }
         .team-slot.picking { transform: scale(1.03); box-shadow: 0 0 20px #facc15, 0 0 10px #facc15 inset; border-color: #facc15; }
         #pokemon-grid::-webkit-scrollbar, body::-webkit-scrollbar { width: 8px; }
         #pokemon-grid::-webkit-scrollbar-track, body::-webkit-scrollbar-track { background: transparent; }
@@ -57,24 +57,43 @@
                 <h1 class="text-4xl sm:text-5xl font-extrabold main-title">SIMULADOR DE DRAFTEO ONLINE</h1>
                 <p class="text-slate-300 font-semibold">Creado por: <span class="font-bold text-cyan-400">antuan</span></p>
             </header>
-            <div class="modern-panel p-8 rounded-2xl text-center w-full max-w-md mt-8">
-                <h2 class="text-2xl font-bold mb-4">Ingresa tu nombre de usuario</h2>
-                <input type="text" id="username-input" class="w-full bg-slate-800 text-white p-3 rounded-lg text-center" placeholder="Tu nombre...">
-            </div>
-            <div id="lobby-buttons" class="flex flex-col sm:flex-row gap-4">
-                 <button id="create-game-button" class="styled-button text-white font-bold py-4 px-8 rounded-2xl text-xl">Crear Partida</button>
-                 <button id="join-game-button" class="secondary-button text-white font-bold py-4 px-8 rounded-2xl text-xl">Unirse a Partida</button>
-            </div>
-            <div id="team-selection" class="hidden flex-col items-center gap-4">
-                <h3 class="text-xl font-bold">Elige tu equipo</h3>
-                <div class="flex gap-4">
-                    <button id="choose-purple" class="secondary-button text-purple-400 font-bold py-3 px-6 rounded-xl">Equipo Morado</button>
-                    <button id="choose-orange" class="secondary-button text-orange-400 font-bold py-3 px-6 rounded-xl">Equipo Naranja</button>
+            
+            <div id="initial-lobby" class="w-full max-w-md">
+                <div class="modern-panel p-8 rounded-2xl text-center">
+                    <h2 class="text-2xl font-bold mb-4">Ingresa tu nombre de usuario</h2>
+                    <input type="text" id="username-input" class="w-full bg-slate-800 text-white p-3 rounded-lg text-center" placeholder="Tu nombre...">
+                </div>
+                <div id="lobby-buttons" class="flex flex-col sm:flex-row gap-4 mt-4">
+                     <button id="create-game-button" class="w-full styled-button text-white font-bold py-4 px-8 rounded-2xl text-xl">Crear Partida</button>
+                     <button id="join-game-button" class="w-full secondary-button text-white font-bold py-4 px-8 rounded-2xl text-xl">Unirse a Partida</button>
                 </div>
             </div>
-             <div id="waiting-room" class="hidden text-center modern-panel p-6 mt-4">
-                <p>Esperando oponente... Comparte este código:</p>
-                <p id="game-code-display" class="text-2xl font-bold text-yellow-300 mt-2 cursor-pointer" title="Copiar código"></p>
+
+            <div id="waiting-room" class="hidden w-full max-w-lg flex-col items-center gap-4">
+                <p>¡Sala de espera! Comparte este código:</p>
+                <p id="game-code-display" class="text-2xl font-bold text-yellow-300 my-2 cursor-pointer" title="Copiar código"></p>
+                
+                <div id="player-slots" class="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="modern-panel p-4 text-center">
+                        <h3 class="text-lg font-bold text-purple-400">Equipo Morado</h3>
+                        <p id="purple-player-lobby" class="mt-2 text-xl min-h-[28px]">Esperando...</p>
+                    </div>
+                    <div class="modern-panel p-4 text-center">
+                        <h3 class="text-lg font-bold text-orange-400">Equipo Naranja</h3>
+                        <p id="orange-player-lobby" class="mt-2 text-xl min-h-[28px]">Esperando...</p>
+                    </div>
+                </div>
+
+                <div id="team-selection" class="flex flex-col items-center gap-4 mt-4">
+                    <h3 class="text-xl font-bold">Elige tu equipo</h3>
+                    <div class="flex gap-4">
+                        <button id="choose-purple" class="secondary-button text-purple-400 font-bold py-3 px-6 rounded-xl">Equipo Morado</button>
+                        <button id="choose-orange" class="secondary-button text-orange-400 font-bold py-3 px-6 rounded-xl">Equipo Naranja</button>
+                    </div>
+                </div>
+
+                <button id="start-game-button" class="hidden styled-button text-white font-bold py-3 px-6 rounded-xl mt-4 text-lg">Empezar Partida</button>
+                <button id="exit-lobby-button" class="secondary-button text-white font-bold py-3 px-6 rounded-xl mt-2">Salir</button>
             </div>
        </div>
     </template>
@@ -129,8 +148,6 @@
 
         // --- CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = {
-            // TU CONFIGURACIÓN DE FIREBASE. Asegúrate de que es correcta.
-            // Es recomendable usar variables de entorno para esto en un proyecto real.
             apiKey: "AIzaSyBVBM0lEVF7oJwaIUYoEY2vc5eLXMPkw3I",
             authDomain: "simulador-unite.firebaseapp.com",
             projectId: "simulador-unite",
@@ -144,12 +161,12 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // --- DATOS DE POKÉMON ---
+        // --- DATOS DE POKÉMON (IDs CORREGIDOS) ---
         const pokemonData = [
             { id: 'venusaur', name: 'Venusaur', role: 'Attacker' }, { id: 'charizard', name: 'Charizard', role: 'All-Rounder' }, { id: 'blastoise', name: 'Blastoise', role: 'Defender' },
-            { id: 'pikachu', name: 'Pikachu', role: 'Attacker' }, { id: 'clefable', name: 'Clefable', role: 'Supporter' }, { id: 'ninetales', name: 'A. Ninetales', role: 'Attacker' },
+            { id: 'pikachu', name: 'Pikachu', role: 'Attacker' }, { id: 'clefable', name: 'Clefable', role: 'Supporter' }, { id: 'ninetales-alolan', name: 'A. Ninetales', role: 'Attacker' },
             { id: 'wigglytuff', name: 'Wigglytuff', role: 'Supporter' }, { id: 'machamp', name: 'Machamp', role: 'All-Rounder' }, { id: 'slowbro', name: 'Slowbro', role: 'Defender' },
-            { id: 'gengar', name: 'Gengar', role: 'Speedster' }, { id: 'mr-mime', name: 'Mr. Mime', role: 'Supporter' }, { id: 'snorlax', name: 'Snorlax', role: 'Defender' },
+            { id: 'gengar', name: 'Gengar', role: 'Speedster' }, { id: 'mr.mime', name: 'Mr. Mime', role: 'Supporter' }, { id: 'snorlax', name: 'Snorlax', role: 'Defender' },
             { id: 'gardevoir', name: 'Gardevoir', role: 'Attacker' }, { id: 'absol', name: 'Absol', role: 'Speedster' }, { id: 'garchomp', name: 'Garchomp', role: 'All-Rounder' },
             { id: 'lucario', name: 'Lucario', role: 'All-Rounder' }, { id: 'crustle', name: 'Crustle', role: 'Defender' }, { id: 'greninja', name: 'Greninja', role: 'Attacker' },
             { id: 'talonflame', name: 'Talonflame', role: 'Speedster' }, { id: 'zeraora', name: 'Zeraora', role: 'Speedster' }, { id: 'cinderace', name: 'Cinderace', role: 'Attacker' },
@@ -160,10 +177,10 @@
             { id: 'sylveon', name: 'Sylveon', role: 'Attacker' }, { id: 'decidueye', name: 'Decidueye', role: 'Attacker' }, { id: 'goodra', name: 'Goodra', role: 'Defender' },
             { id: 'buzzwole', name: 'Buzzwole', role: 'All-Rounder' }, { id: 'tyranitar', name: 'Tyranitar', role: 'All-Rounder' }, { id: 'mew', name: 'Mew', role: 'Attacker' },
             { id: 'dodrio', name: 'Dodrio', role: 'Speedster' }, { id: 'scizor', name: 'Scizor', role: 'All-Rounder' }, { id: 'clefairy', name: 'Clefairy', role: 'Supporter' },
-            { id: 'zorua', name: 'Zoroark', role: 'Speedster' }, { id: 'sableye', name: 'Sableye', role: 'Supporter' }, { id: 'urshifu', name: 'Urshifu', role: 'All-Rounder' },
+            { id: 'zoroark', name: 'Zoroark', role: 'Speedster' }, { id: 'sableye', name: 'Sableye', role: 'Supporter' }, { id: 'urshifu', name: 'Urshifu', role: 'All-Rounder' },
             { id: 'comfey', name: 'Comfey', role: 'Supporter' }, { id: 'zacian', name: 'Zacian', role: 'All-Rounder' }, { id: 'lapras', name: 'Lapras', role: 'Defender' },
             { id: 'chandelure', name: 'Chandelure', role: 'Attacker' }, { id: 'inteleon', name: 'Inteleon', role: 'Attacker' }, { id: 'leafeon', name: 'Leafeon', role: 'Speedster' },
-            { id: 'umbreon', name: 'Umbreon', role: 'Defender' }, { id: 'mewtwo-x', name: 'Mewtwo X', role: 'All-Rounder' }, { id: 'mewtwo-y', name: 'Mewtwo Y', role: 'Attacker' },
+            { id: 'umbreon', name: 'Umbreon', role: 'Defender' }, { id: 'mewtwo_x', name: 'Mewtwo X', role: 'All-Rounder' }, { id: 'mewtwo_y', name: 'Mewtwo Y', role: 'Attacker' },
             { id: 'blaziken', name: 'Blaziken', role: 'All-Rounder' }, { id: 'mimikyu', name: 'Mimikyu', role: 'All-Rounder' }, { id: 'metagross', name: 'Metagross', role: 'All-Rounder' },
             { id: 'meowscarada', name: 'Meowscarada', role: 'Speedster' }, { id: 'gyarados', name: 'Gyarados', role: 'All-Rounder' }, { id: 'falinks', name: 'Falinks', role: 'All-Rounder' }
         ].sort((a, b) => a.name.localeCompare(b.name));
@@ -171,7 +188,7 @@
         // --- ESTADO GLOBAL DE LA APLICACIÓN ---
         let currentUser = null;
         let currentGameId = null;
-        let unsubscribeGame = null; // Función para dejar de escuchar cambios en la partida
+        let unsubscribeGame = null; 
         let selectedPokemonId = null;
         let countdownInterval = null;
 
@@ -184,11 +201,10 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                // Si el usuario ya está en una partida (ej. recarga la página), lo vuelve a unir
                 const urlParams = new URLSearchParams(window.location.search);
                 const gameIdFromUrl = urlParams.get('game');
                 if (gameIdFromUrl) {
-                    await joinGame(gameIdFromUrl);
+                    await joinGame(gameIdFromUrl, false);
                 } else {
                     renderView('lobby');
                 }
@@ -204,7 +220,6 @@
             if (template) {
                 const viewContent = template.content.cloneNode(true);
                 appContainer.appendChild(viewContent);
-                // Una vez renderizada la vista, adjuntamos los listeners
                 attachEventListeners(viewName, data);
             } else {
                 console.error(`Vista no encontrada: ${viewName}`);
@@ -217,9 +232,15 @@
                 document.getElementById('create-game-button').addEventListener('click', createGame);
                 document.getElementById('join-game-button').addEventListener('click', () => {
                     const gameCode = prompt("Ingresa el código de la partida:");
-                    if (gameCode) joinGame(gameCode.toUpperCase());
+                    if (gameCode) joinGame(gameCode.toUpperCase(), true);
                 });
-                // Recuperar nombre de usuario guardado
+                
+                // Estos listeners se añaden aquí, pero los elementos pueden no estar visibles inicialmente.
+                document.getElementById('choose-purple')?.addEventListener('click', () => chooseTeam('purple'));
+                document.getElementById('choose-orange')?.addEventListener('click', () => chooseTeam('orange'));
+                document.getElementById('start-game-button')?.addEventListener('click', startGame);
+                document.getElementById('exit-lobby-button')?.addEventListener('click', exitGame);
+
                 const savedUsername = localStorage.getItem('username');
                 if (savedUsername) {
                     document.getElementById('username-input').value = savedUsername;
@@ -242,34 +263,24 @@
 
             const gameRef = doc(db, 'games', gameId);
             const initialGameState = {
+                hostId: currentUser.uid,
                 players: {},
-                phase: 'waiting', // waiting, bans, picks, finished
-                turn: '', // 'purple' o 'orange'
+                phase: 'waiting',
+                turn: '',
                 bans: { purple: [], orange: [] },
                 picks: { purple: [], orange: [] },
                 createdAt: serverTimestamp(),
-                draftOrder: ['purple', 'orange', 'orange', 'purple', 'purple', 'orange'], // Orden de bans
-                pickOrder: ['purple', 'orange', 'orange', 'purple', 'purple', 'orange', 'orange', 'purple', 'purple', 'orange'], // Orden de picks
+                draftOrder: ['purple', 'orange', 'orange', 'purple', 'purple', 'orange'],
+                pickOrder: ['purple', 'orange', 'orange', 'purple', 'purple', 'orange', 'orange', 'purple', 'purple', 'orange'],
                 turnIndex: 0,
                 timerStart: null,
             };
             
             await setDoc(gameRef, initialGameState);
-            
-            // Mostrar sala de espera
-            document.getElementById('lobby-buttons').classList.add('hidden');
-            document.getElementById('waiting-room').classList.remove('hidden');
-            const gameCodeDisplay = document.getElementById('game-code-display');
-            gameCodeDisplay.textContent = gameId;
-            gameCodeDisplay.addEventListener('click', () => copyToClipboard(gameId));
-            
-            document.getElementById('team-selection').classList.remove('hidden');
-
-            document.getElementById('choose-purple').onclick = () => chooseTeam('purple', gameId, username);
-            document.getElementById('choose-orange').onclick = () => chooseTeam('orange', gameId, username);
+            listenToGame(gameId);
         }
 
-        async function joinGame(gameId) {
+        async function joinGame(gameId, isPrompted = true) {
             const username = getAndSaveUsername();
             if (!username) return;
         
@@ -281,125 +292,126 @@
                 return;
             }
             
-            currentGameId = gameId;
             const gameState = gameSnap.data();
+            const isPlayer = Object.values(gameState.players).some(p => p.id === currentUser.uid);
+            const isFull = gameState.players.purple && gameState.players.orange;
 
-            const availableTeams = [];
-            if (!gameState.players.purple) availableTeams.push('purple');
-            if (!gameState.players.orange) availableTeams.push('orange');
-
-            if (availableTeams.length === 0) {
-                 // Modo espectador o reconexión
-                const isPlayer = Object.values(gameState.players).some(p => p.id === currentUser.uid);
-                if (isPlayer) {
-                    console.log("Reconectando a la partida...");
-                    listenToGame(gameId);
-                } else {
-                    alert("La partida ya está llena.");
-                    currentGameId = null;
-                }
+            if (isFull && !isPlayer && isPrompted) {
+                alert("La partida ya está llena.");
                 return;
             }
-
-            // Si solo queda un equipo, se une automáticamente. Si no, muestra opciones.
-            if(availableTeams.length === 1) {
-                await chooseTeam(availableTeams[0], gameId, username);
-            } else {
-                renderView('lobby');
-                document.getElementById('lobby-buttons').classList.add('hidden');
-                document.getElementById('waiting-room').classList.remove('hidden');
-                document.getElementById('game-code-display').textContent = `Uniéndose a ${gameId}...`;
-                const teamSelection = document.getElementById('team-selection');
-                teamSelection.classList.remove('hidden');
-
-                // Deshabilitar botones de equipos ya tomados
-                document.getElementById('choose-purple').disabled = !availableTeams.includes('purple');
-                document.getElementById('choose-orange').disabled = !availableTeams.includes('orange');
-                
-                document.getElementById('choose-purple').onclick = () => chooseTeam('purple', gameId, username);
-                document.getElementById('choose-orange').onclick = () => chooseTeam('orange', gameId, username);
-            }
+            
+            listenToGame(gameId);
         }
 
-        async function chooseTeam(team, gameId, username) {
-            const gameRef = doc(db, 'games', gameId);
+        async function chooseTeam(team) {
+            const username = getAndSaveUsername();
+            if (!username || !currentGameId) return;
+        
+            const gameRef = doc(db, 'games', currentGameId);
+        
+            // Primero, remover al jugador de cualquier otro equipo en el que pueda estar
             const gameSnap = await getDoc(gameRef);
+            if (!gameSnap.exists()) return;
+            const gameState = gameSnap.data();
+            const currentTeams = Object.keys(gameState.players);
+            const myCurrentTeam = currentTeams.find(t => gameState.players[t].id === currentUser.uid);
 
-            if(gameSnap.exists() && !gameSnap.data().players[team]) {
-                await updateDoc(gameRef, {
-                    [`players.${team}`]: { id: currentUser.uid, name: username }
-                });
-                listenToGame(gameId);
-            } else {
-                alert(`El equipo ${team} ya está ocupado.`);
+            const updates = {};
+            if (myCurrentTeam && myCurrentTeam !== team) {
+                updates[`players.${myCurrentTeam}`] = deleteField(); // Firestore SDK no está aquí, así que lo simulo
+            }
+
+            // Añadir al nuevo equipo si no está ocupado
+            if (!gameState.players[team]) {
+                 updates[`players.${team}`] = { id: currentUser.uid, name: username };
+                 await updateDoc(gameRef, updates);
+            } else if (gameState.players[team].id !== currentUser.uid) {
+                 alert(`El equipo ${team} ya está ocupado.`);
             }
         }
         
         function listenToGame(gameId) {
+            if (unsubscribeGame) unsubscribeGame(); // Evitar listeners duplicados
+            
             currentGameId = gameId;
-            // Actualiza la URL para permitir recargar la página
             window.history.pushState({}, '', `?game=${gameId}`);
 
             const gameRef = doc(db, 'games', gameId);
             unsubscribeGame = onSnapshot(gameRef, (docSnap) => {
                 if (docSnap.exists()) {
-                    const gameState = docSnap.data();
-                    handleGameStateChange(gameState);
+                    handleGameStateChange(docSnap.data());
                 } else {
-                    // La partida fue eliminada (ej. el creador se fue)
-                    alert("La partida ha terminado.");
+                    alert("La partida ha terminado o fue eliminada.");
                     exitGame();
                 }
             });
         }
         
-        async function handleGameStateChange(gameState) {
-             // Si ambos jugadores están listos, iniciar el drafteo
-            if (gameState.phase === 'waiting' && gameState.players.purple && gameState.players.orange) {
-                const nextTurn = gameState.draftOrder[0];
-                await updateDoc(doc(db, 'games', currentGameId), {
-                    phase: 'bans',
-                    turn: nextTurn,
-                    turnIndex: 0,
-                    timerStart: serverTimestamp()
-                });
-                return; // La actualización disparará otro snapshot
-            }
-            
-            // Si la vista actual no es 'draft', la renderiza
-            if (!document.getElementById('draft-template-container')) {
-                 renderView('draft', { gameState });
-            } else {
-                 // Si ya está en la vista de draft, solo actualiza la UI
-                 updateDraftUI(gameState);
+        function handleGameStateChange(gameState) {
+            if (gameState.phase === 'waiting') {
+                // Si la vista no es el lobby, la renderiza
+                if (!document.getElementById('initial-lobby')) {
+                     renderView('lobby');
+                }
+                updateLobbyUI(gameState);
+            } else { // 'bans', 'picks', 'finished'
+                // Si la vista actual no es 'draft', la renderiza
+                if (!document.getElementById('pokemon-grid')) {
+                     renderView('draft', { gameState });
+                } else {
+                     updateDraftUI(gameState);
+                }
             }
         }
         
-        // --- FUNCIONES DEL DRAFTEO ---
-        function updateDraftUI(gameState) {
-            if (!appContainer.querySelector('#pokemon-grid')) {
-                console.error("Intentando actualizar UI de draft, pero la vista no está cargada.");
-                return;
+        function updateLobbyUI(gameState) {
+            document.getElementById('initial-lobby').classList.add('hidden');
+            document.getElementById('waiting-room').classList.remove('hidden');
+
+            const gameCodeDisplay = document.getElementById('game-code-display');
+            gameCodeDisplay.textContent = currentGameId;
+            if (!gameCodeDisplay.onclick) {
+                gameCodeDisplay.onclick = () => copyToClipboard(currentGameId);
             }
 
             // Actualizar nombres de jugadores
-            updatePlayerNames(gameState.players);
+            document.getElementById('purple-player-lobby').textContent = gameState.players.purple?.name || 'Esperando...';
+            document.getElementById('orange-player-lobby').textContent = gameState.players.orange?.name || 'Esperando...';
+            
+            // Habilitar/deshabilitar botones de equipo
+            const myTeam = getMyTeam(gameState);
+            document.getElementById('choose-purple').disabled = !!gameState.players.purple && gameState.players.purple.id !== currentUser.uid;
+            document.getElementById('choose-orange').disabled = !!gameState.players.orange && gameState.players.orange.id !== currentUser.uid;
 
-            // Actualizar equipos (picks)
+            // Mostrar/ocultar botón de empezar
+            const canStart = gameState.hostId === currentUser.uid && gameState.players.purple && gameState.players.orange;
+            document.getElementById('start-game-button').classList.toggle('hidden', !canStart);
+        }
+
+        async function startGame() {
+            if (!currentGameId) return;
+            const gameRef = doc(db, 'games', currentGameId);
+            await updateDoc(gameRef, {
+                phase: 'bans',
+                turn: 'purple', // El equipo morado siempre banea primero
+                turnIndex: 0,
+                timerStart: serverTimestamp()
+            });
+        }
+
+        // --- FUNCIONES DEL DRAFTEO ---
+        function updateDraftUI(gameState) {
+            if (!appContainer.querySelector('#pokemon-grid')) return;
+
+            updatePlayerNames(gameState.players);
             updateTeamDisplay('purple', gameState.picks.purple);
             updateTeamDisplay('orange', gameState.picks.orange);
-
-            // Actualizar bans
             updateBanDisplay('purple', gameState.bans.purple);
             updateBanDisplay('orange', gameState.bans.orange);
-
-            // Actualizar estado (ej. "Banea Equipo Morado") y timer
             updateDraftStatusAndTimer(gameState);
-
-            // Deshabilitar Pokémon ya seleccionados
             updatePokemonGrid(gameState);
 
-            // Mostrar u ocultar el botón de confirmar
             const myTeam = getMyTeam(gameState);
             const isMyTurn = myTeam === gameState.turn;
             const confirmButton = document.getElementById('confirm-button');
@@ -444,16 +456,11 @@
             document.querySelectorAll('.pokemon-card:not(.disabled)').forEach(card => {
                 card.addEventListener('click', () => {
                      const myTeam = getMyTeam(gameState);
-                     if (gameState.turn !== myTeam) return; // No es mi turno
+                     if (gameState.turn !== myTeam) return; 
                      
                      const pokemonId = card.dataset.pokemonId;
-                     // Des-seleccionar si se hace clic en el mismo
-                     if (selectedPokemonId === pokemonId) {
-                         selectedPokemonId = null;
-                     } else {
-                         selectedPokemonId = pokemonId;
-                     }
-                     // Actualizar visualmente la selección
+                     selectedPokemonId = (selectedPokemonId === pokemonId) ? null : pokemonId;
+                     
                      updatePokemonGrid(gameState);
                      document.getElementById('confirm-button').disabled = !selectedPokemonId;
                 });
@@ -481,37 +488,29 @@
             statusEl.textContent = `${actionText} ${turnPlayerName}`;
             statusEl.style.color = turn === 'purple' ? '#c084fc' : '#fb923c';
 
-            // Timer
-            const DRAFT_TIME = 30; // segundos por turno
-            if (gameState.timerStart) {
+            const DRAFT_TIME = 30;
+            if (gameState.timerStart?.toDate) {
                 countdownInterval = setInterval(() => {
-                    const serverTimeOffset = 0; // Se podría calcular una latencia más precisa
-                    const startTime = gameState.timerStart.toMillis();
-                    const now = Date.now() + serverTimeOffset;
+                    const startTime = gameState.timerStart.toDate().getTime();
+                    const now = Date.now();
                     const elapsed = Math.floor((now - startTime) / 1000);
                     const remaining = Math.max(0, DRAFT_TIME - elapsed);
                     timerEl.textContent = remaining;
 
-                    if (remaining <= 0) {
-                        clearInterval(countdownInterval);
-                        // TODO: Lógica para auto-selección o penalización si se acaba el tiempo
-                    }
+                    if (remaining <= 0) clearInterval(countdownInterval);
                 }, 1000);
             }
             
-             // Animación de cambio de fase
             if (gameState.turnIndex === 0 && (phase === 'bans' || phase === 'picks')) {
                 const phaseName = phase === 'bans' ? "FASE DE BLOQUEO" : "FASE DE SELECCIÓN";
                 showPhaseOverlay(phaseName);
             }
             
-            // Indicar visualmente qué slot se está eligiendo
             document.querySelectorAll('.team-slot').forEach(slot => slot.classList.remove('picking'));
-            const currentTurnTeam = gameState.turn;
             if (phase === 'picks') {
-                const pickIndex = gameState.picks[currentTurnTeam].length;
-                const slot = document.querySelector(`#${currentTurnTeam}-team .team-slot:nth-child(${pickIndex + 1}), #${currentTurnTeam}-team-mobile .team-slot:nth-child(${pickIndex + 1})`);
-                if (slot) slot.classList.add('picking');
+                const pickIndex = gameState.picks[turn].length;
+                const selector = `#${turn}-team .team-slot:nth-child(${pickIndex + 1}), #${turn}-team-mobile .team-slot:nth-child(${pickIndex + 1})`;
+                document.querySelectorAll(selector).forEach(slot => slot?.classList.add('picking'));
             }
         }
 
@@ -525,13 +524,9 @@
             const gameState = gameSnap.data();
             const myTeam = getMyTeam(gameState);
 
-            // Doble chequeo para evitar selecciones fuera de turno
-            if (gameState.turn !== myTeam) {
-                console.warn("Intento de confirmar fuera de turno.");
-                return;
-            }
+            if (gameState.turn !== myTeam) return;
 
-            const currentPhase = gameState.phase; // 'bans' o 'picks'
+            const currentPhase = gameState.phase;
             const turnIndex = gameState.turnIndex + 1;
 
             let nextPhase = currentPhase;
@@ -544,16 +539,14 @@
                 timerStart: serverTimestamp()
             };
 
-            // Transición de fase de bans a picks
             if (currentPhase === 'bans' && turnIndex >= gameState.draftOrder.length) {
                 nextPhase = 'picks';
                 updates.turnIndex = 0;
                 nextTurn = gameState.pickOrder[0];
             } 
-            // Fin del drafteo
             else if (currentPhase === 'picks' && turnIndex >= gameState.pickOrder.length) {
                 nextPhase = 'finished';
-                nextTurn = ''; // Nadie tiene el turno
+                nextTurn = '';
             }
             
             updates.phase = nextPhase;
@@ -561,7 +554,6 @@
 
             await updateDoc(gameRef, updates);
             
-            // Resetear selección local
             selectedPokemonId = null;
         }
 
@@ -575,7 +567,7 @@
             img.src = `https://unite.pokemon.com/images/pokemon/${pokemon.id}/stat.png`;
             img.alt = pokemon.name;
             img.className = 'w-16 h-16 object-contain';
-            img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=${pokemon.name.substring(0,2)}`; }; // Fallback
+            img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=${pokemon.name.substring(0,2)}`; };
             
             const name = document.createElement('span');
             name.className = 'text-xs font-semibold mt-1 truncate w-full';
@@ -588,11 +580,7 @@
 
         function createTeamSlot(pokemonId = null, isBan = false) {
             const slot = document.createElement('div');
-            if (isBan) {
-                slot.className = 'w-12 h-12 modern-panel flex items-center justify-center';
-            } else {
-                 slot.className = 'team-slot h-24 modern-panel flex flex-col items-center justify-center gap-1 p-2';
-            }
+            slot.className = isBan ? 'w-12 h-12 modern-panel flex items-center justify-center' : 'team-slot h-24 modern-panel flex flex-col items-center justify-center gap-1 p-2';
 
             if (pokemonId) {
                 const pokemon = pokemonData.find(p => p.id === pokemonId);
@@ -626,7 +614,6 @@
             for(let i = 0; i < 5; i++) {
                 const pick = picks[i] || null;
                 teamContainer.appendChild(createTeamSlot(pick));
-                // Para mobile, hacemos una versión más pequeña
                 const mobileSlot = document.createElement('div');
                 mobileSlot.className = 'team-slot w-16 h-16 modern-panel flex items-center justify-center';
                  if (pick) {
@@ -644,7 +631,6 @@
         function updateBanDisplay(team, bans) {
             const banContainer = document.getElementById(`${team}-bans`);
             if (!banContainer) return;
-
             banContainer.innerHTML = '';
             for(let i = 0; i < 3; i++) {
                  const ban = bans[i] || null;
@@ -657,11 +643,10 @@
             phaseOverlayContainer.classList.add('phase-overlay-active');
             phaseOverlayContainer.classList.remove('hidden');
 
-            // Ocultar después de la animación
             setTimeout(() => {
                 phaseOverlayContainer.classList.remove('phase-overlay-active');
                 phaseOverlayContainer.classList.add('hidden');
-            }, 3000); // Duración de la animación
+            }, 3000);
         }
 
         // --- FUNCIONES DE AYUDA (GENERAL) ---
@@ -693,16 +678,14 @@
             }
         
             if (currentGameId) {
-                // Lógica opcional para manejar la salida de un jugador
-                // Por simplicidad, aquí solo borramos la partida si es el último jugador
-                // En una app real, podrías querer permitir que se reconecten.
                 const gameRef = doc(db, 'games', currentGameId);
                 const gameSnap = await getDoc(gameRef);
                 if (gameSnap.exists()) {
-                    const players = Object.values(gameSnap.data().players);
-                    if (players.length <= 1) {
-                         await deleteDoc(gameRef);
-                    }
+                     const myTeam = getMyTeam(gameSnap.data());
+                     // Si un jugador sale, se elimina su registro para que otro pueda unirse
+                     if (myTeam) {
+                        await updateDoc(gameRef, {[`players.${myTeam}`]: deleteField()});
+                     }
                 }
             }
 
@@ -720,7 +703,6 @@
         }
 
         // --- INICIO DE LA APLICACIÓN ---
-        // Renderiza el lobby en cuanto el script se carga
         renderView('lobby');
 
     </script>
