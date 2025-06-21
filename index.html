@@ -246,7 +246,7 @@
                     document.getElementById('username-input').value = savedUsername;
                 }
             } else if (viewName === 'draft') {
-                populatePokemonGrid(); // No necesita estado inicial
+                populatePokemonGrid(); 
                 updateDraftUI(data.gameState);
                 document.getElementById('exit-button').addEventListener('click', exitGame);
                 document.getElementById('confirm-button')?.addEventListener('click', confirmSelection);
@@ -450,7 +450,6 @@
                 card.addEventListener('click', () => {
                      if (!currentGameState) return; // Chequeo de seguridad
                      const myTeam = getMyTeam(currentGameState);
-                     // Usa el estado global y actualizado para la validación del turno
                      if (currentGameState.turn !== myTeam) return; 
                      
                      const pokemonId = card.dataset.pokemonId;
@@ -476,6 +475,7 @@
                 return;
             }
             
+            if (!turn) return; // Evitar errores si el turno está vacío temporalmente
             const turnTeamName = turn.charAt(0).toUpperCase() + turn.slice(1);
             const turnPlayerName = players[turn]?.name || `Equipo ${turnTeamName}`;
             const actionText = phase === 'bans' ? 'Banea' : 'Elige';
@@ -560,7 +560,7 @@
             
             const img = document.createElement('img');
             // URL corregida para mayor estabilidad
-            img.src = `https://unite.pokemon.com/es-es/images/pokemon/${pokemon.id}/stat.png`;
+            img.src = `https://unite-db.com/images/pokemon/${pokemon.id}.png`;
             img.alt = pokemon.name;
             img.className = 'w-16 h-16 object-contain';
             img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=${pokemon.name.substring(0,2)}`; };
@@ -582,7 +582,7 @@
                 const pokemon = pokemonData.find(p => p.id === pokemonId);
                 const img = document.createElement('img');
                 // URL corregida para mayor estabilidad
-                img.src = `https://unite.pokemon.com/es-es/images/pokemon/${pokemon.id}/stat.png`;
+                img.src = `https://unite-db.com/images/pokemon/${pokemonId}.png`;
                 img.alt = pokemon?.name || pokemonId;
                 img.className = isBan ? 'w-10 h-10' : 'w-16 h-16';
                 img.onerror = (e) => { e.target.src = `https://placehold.co/64x64/1f2937/ffffff?text=${pokemonId.substring(0,2)}`; };
@@ -617,7 +617,7 @@
                     const pokemon = pokemonData.find(p => p.id === pick);
                     if (pokemon) {
                         const img = document.createElement('img');
-                        img.src = `https://unite.pokemon.com/es-es/images/pokemon/${pokemon.id}/stat.png`;
+                        img.src = `https://unite-db.com/images/pokemon/${pokemon.id}.png`;
                         img.alt = pokemon.name;
                         img.className = 'w-12 h-12';
                         mobileSlot.appendChild(img);
@@ -665,6 +665,7 @@
         }
 
         function getMyTeam(gameState) {
+            if (!currentUser || !gameState?.players) return null;
             if (gameState.players.purple?.id === currentUser.uid) return 'purple';
             if (gameState.players.orange?.id === currentUser.uid) return 'orange';
             return null;
@@ -692,6 +693,7 @@
             }
 
             currentGameId = null;
+            currentGameState = null;
             window.history.pushState({}, '', window.location.pathname);
             renderView('lobby');
         }
