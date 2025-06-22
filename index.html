@@ -38,6 +38,8 @@
         #pokemon-grid::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb { background-color: #38bdf8; border-radius: 20px; border: 2px solid transparent; background-clip: content-box;}
         @keyframes phase-anim { 0%, 100% { opacity: 0; transform: scale(0.8) translateY(20px); } 10%, 90% { opacity: 1; transform: scale(1) translateY(0); } }
         .phase-overlay-active { display: flex; animation: phase-anim 3s ease-in-out forwards; text-shadow: 0 0 15px rgba(255,255,255,0.8); }
+        .role-filter-btn { background-color: rgba(30,41,59,0.5); border:1px solid #334155; transition: all 0.2s; color: #e0e0e0; }
+        .role-filter-btn.active, .role-filter-btn:hover { background-color: #38bdf8; border-color: #0ea5e9; color: white; }
     </style>
 </head>
 <body class="p-2 sm:p-4">
@@ -122,6 +124,14 @@
                     <div class="lg:hidden modern-panel p-2 mb-4">
                         <h2 id="purple-player-name-mobile" class="text-xl text-center font-bold text-purple-400"></h2>
                         <div id="purple-team-mobile" class="flex justify-around mt-2"></div>
+                    </div>
+                    <div id="role-filter-container" class="flex flex-wrap justify-center gap-2 mb-4 shrink-0 px-2">
+                        <button class="role-filter-btn px-4 py-1 rounded-full text-sm font-semibold active" data-role="All">Todos</button>
+                        <button class="role-filter-btn px-4 py-1 rounded-full text-sm font-semibold" data-role="Attacker">Atacante</button>
+                        <button class="role-filter-btn px-4 py-1 rounded-full text-sm font-semibold" data-role="Defender">Defensor</button>
+                        <button class="role-filter-btn px-4 py-1 rounded-full text-sm font-semibold" data-role="Speedster">Ágil</button>
+                        <button class="role-filter-btn px-4 py-1 rounded-full text-sm font-semibold" data-role="All-Rounder">Equilibrado</button>
+                        <button class="role-filter-btn px-4 py-1 rounded-full text-sm font-semibold" data-role="Supporter">Soporte</button>
                     </div>
                     <div id="pokemon-grid" class="flex-grow p-3 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 modern-panel overflow-y-auto" style="height: 50vh;"></div>
                     <button id="confirm-button" class="w-full max-w-xs mx-auto styled-button font-bold py-3 px-4 text-lg rounded-xl mt-4 hidden">CONFIRMAR</button>
@@ -253,6 +263,25 @@
                 updateDraftUI(data.gameState);
                 document.getElementById('exit-button').addEventListener('click', exitGame);
                 document.getElementById('confirm-button')?.addEventListener('click', confirmSelection);
+                
+                // --- LÓGICA DE FILTRADO POR ROL ---
+                const filterButtons = document.querySelectorAll('.role-filter-btn');
+                filterButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        filterButtons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        
+                        const selectedRole = button.dataset.role;
+
+                        document.querySelectorAll('.pokemon-card').forEach(card => {
+                            if (selectedRole === 'All' || card.dataset.role === selectedRole) {
+                                card.style.display = 'flex';
+                            } else {
+                                card.style.display = 'none';
+                            }
+                        });
+                    });
+                });
             }
         }
 
@@ -560,6 +589,7 @@
             const card = document.createElement('div');
             card.className = `pokemon-card p-2 flex flex-col items-center justify-center text-center modern-panel bg-role-${pokemon.role.replace(' ', '-')}`;
             card.dataset.pokemonId = pokemon.id;
+            card.dataset.role = pokemon.role;
             
             const img = document.createElement('img');
             // URL corregida y con manejo especial para Psyduck
